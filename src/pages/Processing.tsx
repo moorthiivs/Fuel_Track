@@ -13,11 +13,18 @@ export const Processing: React.FC = () => {
   const navigate = useNavigate()
   const draftEntry = useFuelStore((s) => s.draftEntry)
 
-  const meterResult = draftEntry.meterOCR || {
-    quantity: 32.45,
-    amount: 3245,
-    rate: 100,
-    confidence: { quantity: 98, amount: 96, rate: 99 },
+  const meterResult = draftEntry.meterOCR
+
+  // If no valid meter OCR data exists, redirect back to capture
+  useEffect(() => {
+    if (!meterResult || !meterResult.isValid) {
+      navigate('/add-fuel/meter', { replace: true })
+    }
+  }, [meterResult, navigate])
+
+  // Guard: don't render if no valid data
+  if (!meterResult || !meterResult.isValid) {
+    return null
   }
 
   const [steps, setSteps] = useState<StepItem[]>([

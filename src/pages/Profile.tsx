@@ -214,7 +214,7 @@ export const Profile: React.FC = () => {
               <div className="space-y-1">
                 <div className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
                   <Cpu className="w-4 h-4 text-purple-400" />
-                  <span>Google Gemini Flash 1.5</span>
+                  <span>Google Gemini 3.6 Flash</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
                   State-of-the-art vision AI for reading motorcycle/car digital LCD clusters, trip

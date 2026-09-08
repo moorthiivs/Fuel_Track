@@ -52,7 +52,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
       geminiService.setApiKey(trimmed)
       setTestStatus({
         type: 'success',
-        message: 'Verified & Connected to Gemini 1.5 Flash!',
+        message: result.message || 'Verified & Connected to Gemini 3.6 Flash!',
       })
       onKeySaved?.()
       setTimeout(() => {
@@ -79,13 +79,13 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gemini AI Vision Engine">
-      <div className="space-y-4 text-slate-200">
+      <div className="space-y-4 text-slate-200 pb-3">
         {/* Banner with Glowing Gradient */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-slate-900 border border-purple-500/30 space-y-2 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-              <span>Google Gemini Flash 1.5</span>
+              <span>Google Gemini 3.6 Flash</span>
             </div>
             {isConfigured ? (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">

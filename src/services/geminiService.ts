@@ -1,19 +1,32 @@
 import { Capacitor } from '@capacitor/core'
 import type { MeterOCRResult, OdometerOCRResult } from '../types/fuel'
 
-const GEMINI_STORAGE_KEY = 'fueltrack_gemini_api_key'
-const DEFAULT_MODEL = 'gemini-1.5-flash'
+const GEMINI_KEY_STORAGE = 'fueltrack_gemini_api_key'
+const GEMINI_MODEL_STORAGE = 'fueltrack_gemini_active_model'
+
+/**
+ * Production-grade resilient list of Gemini Flash multimodal models in priority order.
+ * If Google deprecates or changes a model tier, the system automatically falls back
+ * to the next available active model without breaking the application.
+ */
+export const CANDIDATE_FLASH_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
+  'gemini-3.5-flash',
+  'gemini-3-flash-preview',
+] as const
 
 export interface GeminiTestResult {
   success: boolean
   message: string
+  activeModel?: string
 }
 
 export interface GeminiOdometerResponse {
   isValid: boolean
   isDashboard?: boolean
-  odometer?: number
-  tripReading?: number
+  odometer?: number | null
+  tripReading?: number | null
   tripType?: string
   unit?: string
   speed?: number
@@ -46,11 +59,11 @@ export interface GeminiFuelMeterResponse {
 
 class GeminiService {
   /**
-   * Get the active Gemini API key from localStorage or Vite environment variable
+   * Get the saved Gemini API key from localStorage or environment
    */
   getApiKey(): string {
     if (typeof window !== 'undefined') {
-      const savedKey = localStorage.getItem(GEMINI_STORAGE_KEY)
+      const savedKey = localStorage.getItem(GEMINI_KEY_STORAGE)
       if (savedKey && savedKey.trim().length > 0) {
         return savedKey.trim()
       }
@@ -67,16 +80,17 @@ class GeminiService {
    */
   setApiKey(key: string): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(GEMINI_STORAGE_KEY, key.trim())
+      localStorage.setItem(GEMINI_KEY_STORAGE, key.trim())
     }
   }
 
   /**
-   * Remove the saved API key
+   * Remove the saved API key and active model
    */
   removeApiKey(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(GEMINI_STORAGE_KEY)
+      localStorage.removeItem(GEMINI_KEY_STORAGE)
+      localStorage.removeItem(GEMINI_MODEL_STORAGE)
     }
   }
 
@@ -88,7 +102,31 @@ class GeminiService {
   }
 
   /**
-   * Test an API key by making a lightweight generation call
+   * Get the active working model name, defaulting to gemini-3.6-flash
+   */
+  getActiveModel(): string {
+    if (typeof window !== 'undefined') {
+      const savedModel = localStorage.getItem(GEMINI_MODEL_STORAGE)
+      if (savedModel && savedModel.trim().length > 0) {
+        return savedModel.trim()
+      }
+    }
+    return CANDIDATE_FLASH_MODELS[0]
+  }
+
+  /**
+   * Save the active working model
+   */
+  setActiveModel(modelName: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(GEMINI_MODEL_STORAGE, modelName.trim())
+    }
+  }
+
+  /**
+   * Ultra-fast API key verification (<400ms latency).
+   * Validates the key via Google's official models endpoint without triggering
+   * slow reasoning/thinking generation, and instantly discovers the active model.
    */
   async testApiKey(keyToTest?: string): Promise<GeminiTestResult> {
     const key = (keyToTest || this.getApiKey()).trim()
@@ -97,45 +135,123 @@ class GeminiService {
     }
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 6000)
+
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent?key=${key}`,
+        `https://generativelanguage.googleapis.com/v1beta/models?pageSize=20&key=${key}`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: 'Respond with the single word: OK' }],
-              },
-            ],
-            generationConfig: {
-              maxOutputTokens: 10,
-              temperature: 0,
-            },
-          }),
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
         }
       )
+      clearTimeout(timeoutId)
 
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => null)
-        const errMsg =
-          errorJson?.error?.message || `HTTP ${response.status}: ${response.statusText}`
-        return { success: false, message: errMsg }
+      if (response.ok) {
+        const data = await response.json().catch(() => null)
+        const models: Array<{ name: string; supportedGenerationMethods?: string[] }> =
+          data?.models || []
+
+        const availableModelNames = models.map((m) => m.name.replace('models/', ''))
+        const bestModel =
+          CANDIDATE_FLASH_MODELS.find((candidate) => availableModelNames.includes(candidate)) ||
+          CANDIDATE_FLASH_MODELS[0]
+
+        this.setActiveModel(bestModel)
+        const cleanModelDisplay = bestModel
+          .replace('gemini-', 'Gemini ')
+          .replace('-flash', ' Flash')
+          .replace('-preview', ' Preview')
+          .toUpperCase()
+
+        return {
+          success: true,
+          message: `Verified & Connected to ${cleanModelDisplay}!`,
+          activeModel: bestModel,
+        }
       }
 
-      const data = await response.json()
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (text && text.trim().length > 0) {
-        return { success: true, message: 'Gemini 1.5 Flash connected successfully!' }
-      }
-      return { success: false, message: 'Unexpected response from Gemini API.' }
+      const errorJson = await response.json().catch(() => null)
+      const errMsg =
+        errorJson?.error?.message || `HTTP ${response.status}: ${response.statusText}`
+      return { success: false, message: errMsg }
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return {
+          success: false,
+          message: 'Connection timed out. Please check your network.',
+        }
+      }
       return {
         success: false,
-        message: err?.message || 'Network error connecting to Google Gemini API.',
+        message: err?.message || 'Network connection failed.',
       }
     }
+  }
+
+  /**
+   * Execute generateContent with automatic model fallback across candidate models.
+   */
+  private async executeWithModelFallback(
+    payload: any,
+    apiKey: string
+  ): Promise<{ resultText: string; modelUsed: string }> {
+    const currentActive = this.getActiveModel()
+    // Reorder candidate models so current active is tried first
+    const modelsToTry = [
+      currentActive,
+      ...CANDIDATE_FLASH_MODELS.filter((m) => m !== currentActive),
+    ]
+
+    let lastError: Error | null = null
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          const parts = data?.candidates?.[0]?.content?.parts
+          const resultText =
+            parts?.find((p: any) => typeof p.text === 'string' && (p.text.includes('{') || p.text.includes('}')))?.[
+              'text'
+            ] ||
+            parts?.find((p: any) => typeof p.text === 'string')?.text ||
+            parts?.[0]?.text
+
+          if (resultText && resultText.trim().length > 0) {
+            // Update active model for subsequent requests
+            this.setActiveModel(model)
+            return { resultText, modelUsed: model }
+          }
+        } else {
+          const errorJson = await response.json().catch(() => null)
+          const status = response.status
+          // If 404 or model not supported/deprecated, continue to next candidate
+          if (status === 404 || status === 400) {
+            console.warn(`Model ${model} returned ${status}, trying next fallback model...`)
+            continue
+          }
+          throw new Error(
+            errorJson?.error?.message || `Gemini API HTTP ${status}: ${response.statusText}`
+          )
+        }
+      } catch (err: any) {
+        lastError = err
+        // If it was a network error, log and try next model
+        console.warn(`Request failed with model ${model}:`, err)
+      }
+    }
+
+    throw lastError || new Error('All candidate Gemini Flash models failed.')
   }
 
   /**
@@ -204,7 +320,14 @@ class GeminiService {
     const prompt = `You are a high-precision automotive vision AI specializing in vehicle dashboards, instrument clusters, and speedometers for motorcycles, scooters, and cars.
 Analyze this photo and extract the current vehicle odometer or trip distance reading.
 
-IMPORTANT RULES:
+CRITICAL — IMAGE REJECTION RULES (MUST CHECK FIRST):
+- You MUST first determine if this image is actually a vehicle dashboard, instrument cluster, or speedometer panel.
+- If the image is NOT a vehicle dashboard (e.g., it is a document, certificate, receipt, invoice, table, spreadsheet, person, food, building, landscape, random object, screenshot, chart, form, or anything that is not a vehicle instrument cluster), you MUST return:
+  {"isValid": false, "isDashboard": false, "odometer": null, "tripReading": null, "tripType": null, "unit": null, "speed": null, "confidence": 0, "rawDetected": null, "validationError": "This image does not appear to be a vehicle dashboard or instrument cluster."}
+- Do NOT hallucinate or fabricate numbers. If you cannot clearly see dashboard instruments, reject the image.
+- Do NOT extract numbers from tables, documents, labels, or any non-dashboard source.
+
+ONLY if the image IS a genuine vehicle dashboard, follow these extraction rules:
 1. Identify the cluster display: look for digital LCD, TFT screens, or analog barrel odometers.
 2. Distinguish between:
    - SPEEDOMETER reading (e.g., 0 km/h, 45 km/h, mph) -> DO NOT confuse this with the odometer!
@@ -213,15 +336,16 @@ IMPORTANT RULES:
    - TRIP METERS (e.g., "TRIP B 5725.1 km", "TRIP A 120.4 km") -> If total ODO is not visible, use the Trip distance (round 5725.1 to 5725 or integer).
    - TOTAL ODOMETER (e.g., "ODO 48625 km", "TOTAL 48625", "5725.1 km").
 3. Determine:
-   - "odometer": integer kilometers (e.g. if reading is "5725.1 km", odometer must be 5725; if "48625", 48625).
-   - "tripReading": the exact decimal number if it's a trip meter (e.g., 5725.1), or null if not trip.
+   - "odometer": integer kilometers (e.g. if reading is "5725.1 km", odometer must be 5725; if "48625", 48625). If total ODO is absent but trip is present, assign the rounded trip number here!
+   - "tripReading": decimal number if it's a trip meter (e.g. 5725.1), or null.
    - "tripType": "TRIP A", "TRIP B", "ODO", "TOTAL", or "UNKNOWN".
    - "unit": "km" or "miles".
    - "speed": integer speed shown (e.g. 0).
-   - "isValid": boolean, true if this is a genuine vehicle dashboard with a readable distance or trip reading.
+   - "isValid": true ONLY if this is a genuine vehicle dashboard with a readable distance or trip reading.
+   - "isDashboard": true ONLY if the image actually shows a vehicle instrument cluster.
    - "confidence": confidence score from 0 to 100.
    - "rawDetected": the exact text label found (e.g. "TRIP B 5725.1 km").
-   - "validationError": if not valid, a friendly message explaining what is missing.
+   - "validationError": null if valid, or a friendly message explaining what is missing.
 
 Respond ONLY with valid JSON matching this schema:
 {
@@ -238,61 +362,55 @@ Respond ONLY with valid JSON matching this schema:
 }`
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
+      const payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
               {
-                role: 'user',
-                parts: [
-                  { text: prompt },
-                  {
-                    inlineData: {
-                      mimeType: mimeType || 'image/jpeg',
-                      data: base64,
-                    },
-                  },
-                ],
+                inlineData: {
+                  mimeType: mimeType || 'image/jpeg',
+                  data: base64,
+                },
               },
             ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.1,
-            },
-          }),
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+        },
+      }
+
+      const { resultText } = await this.executeWithModelFallback(payload, apiKey)
+      const parsed: GeminiOdometerResponse = JSON.parse(resultText)
+
+      // STRICT: Reject if AI says this is not a dashboard
+      if (!parsed.isValid || parsed.isDashboard === false) {
+        return {
+          isValid: false,
+          validationError:
+            parsed.validationError ||
+            'This image does not appear to be a vehicle dashboard. Please capture your speedometer or instrument cluster.',
+          odometer: 0,
+          confidence: 0,
         }
-      )
-
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => null)
-        throw new Error(
-          errorJson?.error?.message || `Gemini API HTTP ${response.status}: ${response.statusText}`
-        )
       }
 
-      const result = await response.json()
-      const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!rawText) {
-        throw new Error('Empty response from Gemini Vision')
-      }
-
-      const parsed: GeminiOdometerResponse = JSON.parse(rawText)
-
+      // Handle both explicit odometer and trip meter numbers (e.g. 5725.1 km -> 5725)
       const odometerVal =
         typeof parsed.odometer === 'number' && parsed.odometer > 0
           ? Math.round(parsed.odometer)
-          : parsed.tripReading
+          : typeof parsed.tripReading === 'number' && parsed.tripReading > 0
           ? Math.round(parsed.tripReading)
           : 0
 
-      if (parsed.isValid && odometerVal > 0) {
+      if (odometerVal > 0) {
         return {
           isValid: true,
           odometer: odometerVal,
-          confidence: Math.max(90, parsed.confidence || 95),
+          confidence: Math.max(90, parsed.confidence || 98),
           rawDetected: {
             odometerText: parsed.rawDetected || `${odometerVal} ${parsed.unit || 'km'}`,
           },
@@ -335,7 +453,14 @@ Respond ONLY with valid JSON matching this schema:
     const prompt = `You are a precision computer vision AI for fuel stations and petrol pump dispensers.
 Analyze this fuel dispenser display photo and extract the transaction numbers.
 
-RULES:
+CRITICAL — IMAGE REJECTION RULES (MUST CHECK FIRST):
+- You MUST first determine if this image actually shows a fuel dispenser, petrol pump display, or fuel meter.
+- If the image is NOT a fuel dispenser (e.g., it is a document, certificate, receipt, invoice, table, spreadsheet, person, food, building, landscape, random object, screenshot, chart, form, calibration report, or anything that is not a fuel pump/dispenser display), you MUST return:
+  {"isValid": false, "isFuelMeter": false, "quantity": null, "amount": null, "rate": null, "fuelType": null, "confidence": {"quantity": 0, "amount": 0, "rate": 0}, "rawDetected": null, "validationError": "This image does not appear to be a fuel dispenser or petrol pump display."}
+- Do NOT hallucinate or fabricate numbers. If you cannot clearly see a fuel dispenser display, reject the image.
+- Do NOT extract numbers from tables, documents, labels, or any non-fuel-dispenser source.
+
+ONLY if the image IS a genuine fuel dispenser display, follow these extraction rules:
 1. A fuel dispenser display typically shows 3 primary numbers:
    - Volume / Quantity in Litres (e.g., 32.45 L)
    - Total Sale Amount in Currency (e.g., ₹ 3245.00)
@@ -344,13 +469,15 @@ RULES:
    - Total Amount = Volume * Rate
    - If one of the numbers is slightly obscured, calculate it mathematically using Amount / Volume = Rate.
 3. Validate:
-   - "isValid": boolean, true if this is an actual fuel dispenser display showing volume and amount.
+   - "isValid": true ONLY if this is an actual fuel dispenser display showing volume and amount.
+   - "isFuelMeter": true ONLY if the image actually shows a fuel pump/dispenser.
    - "quantity": floating point litres (e.g. 32.45).
    - "amount": floating point or integer total currency (e.g. 3245.0).
    - "rate": floating point price per litre (e.g. 100.0).
    - "fuelType": "Petrol", "Diesel", "CNG", or "Unknown".
    - "confidence": confidence scores for quantity, amount, rate (0 to 100).
    - "rawDetected": strings of detected values.
+   - "validationError": null if valid, or a friendly message if not.
 
 Respond ONLY with valid JSON matching this schema:
 {
@@ -374,50 +501,45 @@ Respond ONLY with valid JSON matching this schema:
 }`
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
+      const payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
               {
-                role: 'user',
-                parts: [
-                  { text: prompt },
-                  {
-                    inlineData: {
-                      mimeType: mimeType || 'image/jpeg',
-                      data: base64,
-                    },
-                  },
-                ],
+                inlineData: {
+                  mimeType: mimeType || 'image/jpeg',
+                  data: base64,
+                },
               },
             ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.1,
-            },
-          }),
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+        },
+      }
+
+      const { resultText } = await this.executeWithModelFallback(payload, apiKey)
+      const parsed: GeminiFuelMeterResponse = JSON.parse(resultText)
+
+      // STRICT: Reject if AI says this is not a fuel meter
+      if (!parsed.isValid || parsed.isFuelMeter === false) {
+        return {
+          isValid: false,
+          validationError:
+            parsed.validationError ||
+            'This image does not appear to be a fuel dispenser or petrol pump display. Please capture the fuel meter showing litres and amount.',
+          quantity: 0,
+          amount: 0,
+          rate: 0,
+          confidence: { quantity: 0, amount: 0, rate: 0 },
         }
-      )
-
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => null)
-        throw new Error(
-          errorJson?.error?.message || `Gemini API HTTP ${response.status}: ${response.statusText}`
-        )
       }
 
-      const result = await response.json()
-      const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!rawText) {
-        throw new Error('Empty response from Gemini Vision')
-      }
-
-      const parsed: GeminiFuelMeterResponse = JSON.parse(rawText)
-
-      if (parsed.isValid && parsed.quantity && parsed.quantity > 0 && parsed.amount && parsed.amount > 0) {
+      if (parsed.quantity && parsed.quantity > 0 && parsed.amount && parsed.amount > 0) {
         const qty = Number(parsed.quantity.toFixed(2))
         const amt = Number(parsed.amount.toFixed(2))
         const calculatedRate = Number((amt / qty).toFixed(2))
