@@ -1,0 +1,34 @@
+[
+  {
+    "id": "st-001",
+    "name": "Indian Oil - XYZ Bunk",
+    "brand": "Indian Oil",
+    "address": "OMR Main Road, Kelambakkam, Chennai, Tamil Nadu 603103",
+    "latitude": 12.7879,
+    "longitude": 80.2281
+  },
+  {
+    "id": "st-002",
+    "name": "Bharat Petroleum - Siruseri Express",
+    "brand": "Bharat Petroleum",
+    "address": "SIPCOT IT Park, Siruseri, Chennai, Tamil Nadu 603103",
+    "latitude": 12.8251,
+    "longitude": 80.2185
+  },
+  {
+    "id": "st-003",
+    "name": "Shell Fuel Point - Sholinganallur",
+    "brand": "Shell",
+    "address": "Kalaignar Karunanidhi Salai, Sholinganallur, Chennai 600119",
+    "latitude": 12.9015,
+    "longitude": 80.2279
+  },
+  {
+    "id": "st-004",
+    "name": "HP Auto Care - Thoraipakkam",
+    "brand": "Hindustan Petroleum",
+    "address": "200 Feet Radial Rd, Thoraipakkam, Chennai 600097",
+    "latitude": 12.9348,
+    "longitude": 80.2312
+  }
+]

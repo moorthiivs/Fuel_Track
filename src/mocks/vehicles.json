@@ -1,0 +1,20 @@
+[
+  {
+    "id": "veh-001",
+    "vehicleNumber": "TN 09 BX 4821",
+    "makeModel": "Hyundai Creta 1.5 SX",
+    "fuelType": "Petrol",
+    "currentOdometer": 48625,
+    "tankCapacity": 50,
+    "estimatedMileage": 15.5
+  },
+  {
+    "id": "veh-002",
+    "vehicleNumber": "KA 01 MJ 8820",
+    "makeModel": "Tata Nexon EV Max",
+    "fuelType": "Electric",
+    "currentOdometer": 24100,
+    "tankCapacity": 40.5,
+    "estimatedMileage": 18.2
+  }
+]
