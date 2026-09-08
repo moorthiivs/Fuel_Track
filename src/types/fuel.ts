@@ -27,6 +27,8 @@ export interface OCRConfidence {
 }
 
 export interface MeterOCRResult {
+  isValid: boolean
+  validationError?: string
   quantity: number
   amount: number
   rate: number
@@ -43,6 +45,8 @@ export interface MeterOCRResult {
 }
 
 export interface OdometerOCRResult {
+  isValid: boolean
+  validationError?: string
   odometer: number
   confidence: number
   rawDetected?: {

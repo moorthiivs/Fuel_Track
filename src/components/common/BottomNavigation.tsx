@@ -19,7 +19,7 @@ export const BottomNavigation: React.FC = () => {
     <nav
       aria-label="Bottom Navigation"
       className="sticky bottom-0 inset-x-0 z-40 shrink-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2 sm:py-2.5"
-      style={{ paddingBottom: 'calc(0.5rem + var(--sab))' }}
+      style={{ paddingBottom: 'max(0.6rem, env(safe-area-inset-bottom, 0.6rem))' }}
     >
       <div className="max-w-md mx-auto flex items-center justify-around relative">
         {/* Home */}
