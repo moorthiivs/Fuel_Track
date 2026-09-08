@@ -32,12 +32,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   }
 
   return (
-    <header
-      className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-900/90 px-4 pb-3"
-      style={{
-        paddingTop: 'max(0.85rem, env(safe-area-inset-top, 0.85rem))',
-      }}
-    >
+    <header className="sticky top-0 z-30 w-full bg-slate-950 border-b border-slate-900 px-4 py-3 shadow-md shadow-slate-950/80 shrink-0">
       <div className="max-w-md mx-auto flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           {showBack && (

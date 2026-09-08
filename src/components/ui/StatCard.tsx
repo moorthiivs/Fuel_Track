@@ -59,41 +59,41 @@ export const StatCard: React.FC<StatCardProps> = ({
       spotlightColor={highlight ? 'rgba(16, 185, 129, 0.28)' : 'rgba(56, 189, 248, 0.18)'}
       borderColor={highlight ? 'rgba(16, 185, 129, 0.45)' : 'rgba(56, 189, 248, 0.35)'}
       className={clsx(
-        'flex flex-col justify-between p-4 relative group transition-all',
+        'flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl relative group transition-all',
         highlight
           ? 'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/30'
           : 'bg-slate-900/90 border-slate-800/80 hover:border-slate-700'
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-semibold text-slate-400 tracking-wide uppercase">
+      <div className="flex items-center justify-between gap-1.5 mb-1.5 sm:mb-2">
+        <span className="text-[11px] sm:text-xs font-bold text-slate-400 tracking-wider uppercase truncate">
           {label}
         </span>
         {icon && (
-          <div className="p-2 rounded-xl bg-slate-800/80 text-emerald-400 shrink-0 border border-slate-700/60 group-hover:scale-105 transition-transform">
+          <div className="p-1.5 sm:p-2 rounded-xl bg-slate-800/90 text-emerald-400 shrink-0 border border-slate-700/60 group-hover:scale-105 transition-transform">
             {icon}
           </div>
         )}
       </div>
 
-      <div className="space-y-1">
-        <div className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="space-y-0.5 sm:space-y-1">
+        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-100 tracking-tight truncate leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
           {renderAnimatedValue()}
         </div>
 
         {(subtext || trend) && (
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-medium truncate">
             {trend && (
               <span
                 className={clsx(
-                  'font-bold',
+                  'font-bold shrink-0',
                   trend.isPositive ? 'text-emerald-400' : 'text-rose-400'
                 )}
               >
                 {trend.value}
               </span>
             )}
-            {subtext && <span>{subtext}</span>}
+            {subtext && <span className="truncate">{subtext}</span>}
           </div>
         )}
       </div>

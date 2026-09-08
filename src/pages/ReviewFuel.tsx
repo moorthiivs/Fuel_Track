@@ -75,19 +75,22 @@ export const ReviewFuel: React.FC = () => {
       </div>
 
       {/* Sticky Bottom Actions Bar */}
-      <div className="sticky bottom-0 inset-x-0 z-40 shrink-0 mt-auto bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 p-4 max-w-md mx-auto w-full">
+      <div
+        className="sticky bottom-0 inset-x-0 z-40 shrink-0 mt-auto bg-slate-950 border-t border-slate-900 p-4 max-w-md mx-auto w-full shadow-2xl shadow-slate-950"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
+      >
         <div className="flex items-center gap-3">
           <Button
             variant="secondary"
             size="lg"
             onClick={handleRetake}
             leftIcon={<RotateCcw className="w-4 h-4" />}
-            className="w-1/3"
+            className="w-1/3 min-h-[52px] font-bold"
           >
             Retake
           </Button>
 
-          <StarBorder speed="3s" color="#10b981" className="flex-1">
+          <StarBorder speed="3s" color="#10b981" className="flex-1 w-full">
             <Button
               variant="primary"
               size="lg"
@@ -95,7 +98,7 @@ export const ReviewFuel: React.FC = () => {
               onClick={handleConfirmSave}
               isLoading={isSaving}
               leftIcon={<Check className="w-5 h-5 stroke-[3]" />}
-              className="py-3.5 shadow-lg shadow-emerald-500/25 text-base bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold w-full"
+              className="min-h-[52px] shadow-lg shadow-emerald-500/25 text-base bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold w-full"
             >
               Confirm & Save
             </Button>

@@ -92,7 +92,7 @@ export const Analytics: React.FC = () => {
 
       <div className="px-4 py-4 sm:px-6 space-y-6 max-w-md mx-auto w-full">
         {/* Time Filter Tabs */}
-        <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 p-1 rounded-2xl shadow-inner">
+        <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-1.5 rounded-2xl shadow-inner gap-1">
           {timeOptions.map((opt) => {
             const isActive = timeRange === opt.key
             return (
@@ -101,10 +101,10 @@ export const Analytics: React.FC = () => {
                 type="button"
                 onClick={() => setTimeRange(opt.key)}
                 className={clsx(
-                  'flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer text-center select-none active:scale-95',
+                  'flex-1 py-2 sm:py-2 min-h-[40px] rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer text-center select-none active:scale-95 flex items-center justify-center',
                   isActive
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold shadow-md shadow-emerald-500/20'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold shadow-md shadow-emerald-500/25'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 )}
               >
                 {opt.label}

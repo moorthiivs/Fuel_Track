@@ -22,7 +22,7 @@ export const StarBorder: React.FC<StarBorderProps> = ({
     <Component
       className={twMerge(
         clsx(
-          'relative inline-block overflow-hidden rounded-2xl p-[1px] select-none',
+          'relative block w-full overflow-hidden rounded-2xl p-[1px] select-none',
           className
         )
       )}
@@ -37,7 +37,7 @@ export const StarBorder: React.FC<StarBorderProps> = ({
         }}
       />
       {/* Inner Content with background */}
-      <div className="relative z-10 w-full h-full rounded-[15px] bg-slate-950 overflow-hidden">
+      <div className="relative z-10 w-full h-full rounded-[15px] bg-slate-950 overflow-hidden flex">
         {children}
       </div>
     </Component>

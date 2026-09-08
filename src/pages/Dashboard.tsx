@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
           <SpotlightCard
             spotlightColor="rgba(16, 185, 129, 0.25)"
             borderColor="rgba(16, 185, 129, 0.45)"
-            className="p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/30 relative overflow-hidden group cursor-pointer shadow-lg shadow-emerald-950/20"
+            className="p-4 sm:p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/30 relative overflow-hidden group cursor-pointer shadow-lg shadow-emerald-950/20 active:scale-[0.99] transition-all"
             onClick={() => navigate('/profile')}
           >
             {/* Background Glow */}
@@ -191,7 +191,7 @@ export const Dashboard: React.FC = () => {
               fullWidth
               onClick={() => navigate('/add-fuel')}
               leftIcon={<Plus className="w-5 h-5 stroke-[2.5]" />}
-              className="py-4 shadow-xl shadow-emerald-500/25 text-base w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold"
+              className="min-h-[54px] shadow-xl shadow-emerald-500/25 text-base sm:text-lg w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold cursor-pointer"
             >
               + Add Fuel Entry (2 Photos)
             </Button>

@@ -80,15 +80,18 @@ export const MobileLayout: React.FC = () => {
           </div>
         </div>
 
+        {/* Native Mobile Status Bar Spacer: Ensures top heading section never overlaps Android/iOS status bar or camera notch */}
+        <div
+          className="lg:hidden shrink-0 w-full bg-slate-950 z-50"
+          style={{ height: 'env(safe-area-inset-top, 0px)' }}
+        />
+
         {/* Scrollable Page Body with Aurora Ambient Background */}
         <AuroraBackground className="flex-1 min-h-0 flex flex-col w-full h-full">
           <div
             key={location.pathname}
             id="page-scroll-container"
             className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto overflow-x-hidden relative overscroll-contain"
-            style={{
-              paddingTop: 'env(safe-area-inset-top, 0px)',
-            }}
           >
             <Outlet />
           </div>
