@@ -4,10 +4,12 @@ import { HeaderBar } from '../components/common/HeaderBar'
 import { CameraOverlay } from '../components/common/CameraOverlay'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { GeminiApiKeyModal } from '../components/common/GeminiApiKeyModal'
 import { cameraService } from '../services/cameraService'
 import { ocrService } from '../services/ocrService'
+import { geminiService } from '../services/geminiService'
 import { useFuelStore } from '../store/fuelStore'
-import { AlertCircle, RotateCcw, Edit3, ArrowRight } from 'lucide-react'
+import { AlertCircle, RotateCcw, Edit3, ArrowRight, Sparkles, Cpu } from 'lucide-react'
 
 export const CaptureMeter: React.FC = () => {
   const navigate = useNavigate()
@@ -21,6 +23,7 @@ export const CaptureMeter: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false)
+  const [isGeminiModalOpen, setIsGeminiModalOpen] = useState<boolean>(false)
   const [manualQty, setManualQty] = useState<string>('32.45')
   const [manualAmt, setManualAmt] = useState<string>('3245')
 
@@ -53,7 +56,7 @@ export const CaptureMeter: React.FC = () => {
     setValidationError(null)
 
     try {
-      // Analyze fuel meter via OCR / Google ML Kit
+      // Analyze fuel meter via Google Gemini Flash AI / Local ML Kit
       const ocrResult = await ocrService.analyzeFuelMeter(photoUri)
 
       if (!ocrResult.isValid) {
@@ -103,6 +106,8 @@ export const CaptureMeter: React.FC = () => {
     navigate('/add-fuel/vehicle')
   }
 
+  const isGeminiActive = geminiService.isConfigured()
+
   return (
     <div className="flex-1 flex flex-col h-full bg-black">
       <HeaderBar
@@ -112,17 +117,63 @@ export const CaptureMeter: React.FC = () => {
         onBack={() => navigate('/add-fuel')}
       />
 
+      {/* AI Vision Engine Indicator Pill */}
+      <div className="px-4 py-1.5 bg-slate-950/90 border-b border-slate-900 flex items-center justify-between text-[11px]">
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <Cpu className="w-3.5 h-3.5 text-purple-400" />
+          <span>Vision Engine:</span>
+          {isGeminiActive ? (
+            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Gemini Flash AI (99% Accuracy)
+            </span>
+          ) : (
+            <span className="text-slate-400">Local On-Device OCR</span>
+          )}
+        </div>
+        {!isGeminiActive && (
+          <button
+            type="button"
+            onClick={() => setIsGeminiModalOpen(true)}
+            className="text-purple-400 hover:text-purple-300 font-bold underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>Enable Gemini AI</span>
+          </button>
+        )}
+      </div>
+
       {/* Validation Error Banner */}
       {validationError && (
-        <div className="m-3 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 text-xs space-y-2 animate-in slide-in-from-top-2 duration-200">
+        <div
+          role="alert"
+          className="m-3 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 text-xs space-y-2.5 animate-in slide-in-from-top-2 duration-200"
+        >
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <div className="flex-1">
               <span className="font-bold block text-rose-200">Photo Validation Failed</span>
-              <p className="text-[11px] text-rose-300/90 mt-0.5">{validationError}</p>
+              <p className="text-[11px] text-rose-300/90 mt-0.5 leading-relaxed">{validationError}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-1 border-t border-rose-500/20">
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-rose-500/20">
+            {/* Gemini AI Action */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (isGeminiActive) {
+                  handleConfirmPhoto()
+                } else {
+                  setIsGeminiModalOpen(true)
+                }
+              }}
+              leftIcon={<Sparkles className="w-3.5 h-3.5 text-purple-300" />}
+              className="text-xs py-2 px-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40"
+            >
+              {isGeminiActive ? 'Scan with Gemini AI' : 'Enable Gemini AI (99% Accuracy)'}
+            </Button>
+
             <Button
               variant="secondary"
               size="sm"
@@ -131,16 +182,17 @@ export const CaptureMeter: React.FC = () => {
                 setPhotoUri(null)
               }}
               leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
-              className="text-xs py-1.5"
+              className="text-xs py-2 px-3"
             >
               Retake Photo
             </Button>
+
             <Button
               variant="primary"
               size="sm"
               onClick={() => setIsManualModalOpen(true)}
               leftIcon={<Edit3 className="w-3.5 h-3.5" />}
-              className="text-xs py-1.5 bg-rose-500 hover:bg-rose-400 text-slate-950"
+              className="text-xs py-2 px-3 bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold"
             >
               Enter Manually
             </Button>
@@ -152,7 +204,11 @@ export const CaptureMeter: React.FC = () => {
         <CameraOverlay
           title="Fuel Dispenser Scanner"
           guidanceText="Fit the fuel meter inside the frame"
-          subGuidanceText="Make sure litres and sale amount are clearly visible"
+          subGuidanceText={
+            isGeminiActive
+              ? 'Gemini Flash AI accurately reads digital pump displays, litres, and sale amount'
+              : 'Make sure litres and sale amount are clearly visible'
+          }
           previewImageUri={photoUri}
           onCapture={handleCapture}
           onSelectFile={handleSelectFile}
@@ -165,6 +221,17 @@ export const CaptureMeter: React.FC = () => {
           isProcessing={isProcessing}
         />
       </div>
+
+      {/* Gemini AI Key Setup Modal */}
+      <GeminiApiKeyModal
+        isOpen={isGeminiModalOpen}
+        onClose={() => setIsGeminiModalOpen(false)}
+        onKeySaved={() => {
+          if (photoUri) {
+            handleConfirmPhoto()
+          }
+        }}
+      />
 
       {/* Manual Fallback Modal */}
       <Modal

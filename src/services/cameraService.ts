@@ -23,7 +23,7 @@ class CameraService {
       })
 
       const webUri = image.webPath || image.path || ''
-      const nativePath = image.path || (image.webPath ? image.webPath.replace(/^https?:\/\/[^\/]+\/_capacitor_file_/, 'file://') : '')
+      const nativePath = image.path || (image.webPath ? image.webPath.replace(/^https?:\/\/[^/]+\/_capacitor_file_/, 'file://') : '')
 
       return {
         uri: webUri,

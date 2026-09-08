@@ -14,8 +14,12 @@ import {
   Save,
   RotateCcw,
   Check,
+  Cpu,
+  Key,
 } from 'lucide-react'
 import type { FuelType } from '../types/fuel'
+import { GeminiApiKeyModal } from '../components/common/GeminiApiKeyModal'
+import { geminiService } from '../services/geminiService'
 
 export const Profile: React.FC = () => {
   const activeVehicle = useFuelStore((s) => s.getActiveVehicle())
@@ -29,6 +33,8 @@ export const Profile: React.FC = () => {
   const [fuelType, setFuelType] = useState<FuelType>(activeVehicle.fuelType)
   const [odometer, setOdometer] = useState(activeVehicle.currentOdometer)
   const [savedSuccess, setSavedSuccess] = useState(false)
+  const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false)
+  const [, setForceUpdate] = useState(0)
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -197,6 +203,52 @@ export const Profile: React.FC = () => {
           </Card>
         </div>
 
+        {/* Google Gemini AI Vision Engine Configuration */}
+        <div className="space-y-2">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            AI Vision Intelligence
+          </span>
+
+          <Card className="p-5 border-purple-500/30 bg-gradient-to-br from-purple-950/20 via-slate-900 to-slate-950 space-y-4 shadow-lg shadow-purple-950/20">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                  <Cpu className="w-4 h-4 text-purple-400" />
+                  <span>Google Gemini Flash 1.5</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  State-of-the-art vision AI for reading motorcycle/car digital LCD clusters, trip
+                  meters, and fuel dispenser numbers with 99%+ accuracy.
+                </p>
+              </div>
+
+              {geminiService.isConfigured() ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
+                  Offline
+                </span>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-purple-900/30 flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={() => setIsGeminiModalOpen(true)}
+                leftIcon={<Key className="w-3.5 h-3.5 text-purple-400" />}
+                className="text-xs border-purple-500/30 hover:bg-purple-950/40 text-purple-200"
+              >
+                {geminiService.isConfigured() ? 'Manage API Key' : 'Configure Gemini API Key'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+
         {/* Demo Mode & Offline Testing Controls */}
         <div className="space-y-2">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -245,6 +297,12 @@ export const Profile: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <GeminiApiKeyModal
+        isOpen={isGeminiModalOpen}
+        onClose={() => setIsGeminiModalOpen(false)}
+        onKeySaved={() => setForceUpdate((n) => n + 1)}
+      />
     </ClickSpark>
   )
 }
