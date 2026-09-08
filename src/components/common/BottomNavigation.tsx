@@ -7,11 +7,8 @@ export const BottomNavigation: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Hide bottom navigation on full-screen capture and processing wizard steps
-  const isCaptureFlow =
-    location.pathname.startsWith('/add-fuel/meter') ||
-    location.pathname.startsWith('/add-fuel/vehicle') ||
-    location.pathname.startsWith('/add-fuel/processing')
+  // Hide bottom navigation on all Add Fuel wizard screens (including review)
+  const isCaptureFlow = location.pathname.startsWith('/add-fuel')
 
   if (isCaptureFlow) return null
 
