@@ -15,12 +15,15 @@ export const CaptureVehicle: React.FC = () => {
   const setDraftVehicle = useFuelStore((s) => s.setDraftVehicle)
   const setDraftLocation = useFuelStore((s) => s.setDraftLocation)
   const updateManualEdit = useFuelStore((s) => s.updateManualEdit)
+  const activeVehicle = useFuelStore((s) => s.getActiveVehicle())
 
   const [photoUri, setPhotoUri] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false)
-  const [manualOdoInput, setManualOdoInput] = useState<string>('48625')
+  const [manualOdoInput, setManualOdoInput] = useState<string>(() =>
+    String(activeVehicle?.currentOdometer || '5725')
+  )
 
   const handleCapture = async () => {
     setValidationError(null)

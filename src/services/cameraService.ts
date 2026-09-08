@@ -3,6 +3,7 @@ import { DEMO_METER_PHOTO, DEMO_VEHICLE_PHOTO } from '../mocks/demoImages'
 
 export interface PhotoCaptureResult {
   uri: string
+  nativePath?: string
   webPath?: string
   format: string
   isDemo?: boolean
@@ -21,8 +22,12 @@ class CameraService {
         source: CameraSource.Camera,
       })
 
+      const webUri = image.webPath || image.path || ''
+      const nativePath = image.path || (image.webPath ? image.webPath.replace(/^https?:\/\/[^\/]+\/_capacitor_file_/, 'file://') : '')
+
       return {
-        uri: image.webPath || image.path || '',
+        uri: webUri,
+        nativePath,
         webPath: image.webPath,
         format: image.format,
         isDemo: false,
