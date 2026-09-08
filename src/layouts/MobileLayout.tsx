@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNavigation } from '../components/common/BottomNavigation'
+import { AuroraBackground } from '../components/reactbits/AuroraBackground'
 import { Smartphone, Monitor, Signal, Wifi, Battery } from 'lucide-react'
 import { clsx } from 'clsx'
 
@@ -61,10 +62,10 @@ export const MobileLayout: React.FC = () => {
       {/* Main Container - Full 100% viewport on mobile devices, phone bezel on desktop */}
       <main
         className={clsx(
-          'w-full flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-300',
+          'w-full flex-1 min-h-0 flex flex-col relative overflow-hidden transition-all duration-300',
           devicePreview
-            ? 'lg:max-w-[420px] lg:my-2 lg:h-[860px] lg:max-h-[90vh] lg:rounded-[44px] lg:border-[10px] lg:border-slate-800 lg:shadow-2xl lg:shadow-emerald-950/30'
-            : 'max-w-md'
+            ? 'lg:max-w-[420px] lg:my-2 lg:h-[860px] lg:max-h-[calc(100vh-3.5rem)] lg:rounded-[44px] lg:border-[10px] lg:border-slate-800 lg:shadow-2xl lg:shadow-emerald-950/30'
+            : 'max-w-md h-full'
         )}
       >
         {/* Fake Status Bar ONLY shown on Desktop Mockup frame (HIDDEN on Mobile/APK where native Android status bar is present) */}
@@ -79,16 +80,19 @@ export const MobileLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Scrollable Page Body: takes available vertical height, scrolls smoothly */}
-        <div
-          key={location.pathname}
-          className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative"
-          style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
-          }}
-        >
-          <Outlet />
-        </div>
+        {/* Scrollable Page Body with Aurora Ambient Background */}
+        <AuroraBackground className="flex-1 min-h-0 flex flex-col w-full h-full">
+          <div
+            key={location.pathname}
+            id="page-scroll-container"
+            className="flex-1 min-h-0 w-full flex flex-col overflow-y-auto overflow-x-hidden relative overscroll-contain"
+            style={{
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+            }}
+          >
+            <Outlet />
+          </div>
+        </AuroraBackground>
 
         {/* Bottom Navigation: ALWAYS pinned at bottom of viewport */}
         <BottomNavigation />
@@ -96,3 +100,4 @@ export const MobileLayout: React.FC = () => {
     </div>
   )
 }
+

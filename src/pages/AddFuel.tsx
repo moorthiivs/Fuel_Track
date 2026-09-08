@@ -56,7 +56,7 @@ export const AddFuel: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pb-6">
+    <div className="w-full min-h-full flex flex-col pb-6">
       <HeaderBar
         title="Add Fuel"
         subtitle="Step 1 of 2: Fuel Meter"

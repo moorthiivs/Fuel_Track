@@ -78,3 +78,70 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
+/* React Bits Animations */
+@keyframes shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shine {
+  animation: shine 4s linear infinite;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+@keyframes aurora-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(25px, 20px) scale(1.1);
+  }
+}
+
+@keyframes aurora-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-30px, 15px) scale(1.08);
+  }
+}
+
+@keyframes aurora-3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(15px, -25px) scale(1.12);
+  }
+}
+
+.animate-aurora-1 {
+  animation: aurora-1 14s ease-in-out infinite alternate;
+}
+
+.animate-aurora-2 {
+  animation: aurora-2 18s ease-in-out infinite alternate;
+}
+
+.animate-aurora-3 {
+  animation: aurora-3 16s ease-in-out infinite alternate;
+}
+

@@ -54,7 +54,7 @@ export const FuelDetails: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pb-8">
+    <div className="w-full min-h-full flex flex-col pb-8">
       <HeaderBar
         title="Fuel Entry Details"
         subtitle={entry.stationName}

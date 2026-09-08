@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card } from '../ui/Card'
+import { SpotlightCard } from '../reactbits/SpotlightCard'
 import { Badge } from '../ui/Badge'
 import { formatCurrency, formatLitres, formatDistance, formatRate, formatMileage } from '../../utils/formatters'
 import type { FuelEntry } from '../../types/fuel'
@@ -15,11 +15,13 @@ export const FuelCard: React.FC<FuelCardProps> = ({ entry, compact = false }) =>
   const navigate = useNavigate()
 
   return (
-    <Card
-      variant="interactive"
+    <SpotlightCard
+      spotlightColor="rgba(16, 185, 129, 0.22)"
+      borderColor="rgba(16, 185, 129, 0.4)"
       onClick={() => navigate(`/history/${entry.id}`)}
-      className="p-4 group border-slate-800/90 hover:border-emerald-500/30 transition-all cursor-pointer"
+      className="p-4 group bg-slate-900/90 border-slate-800/90 hover:border-emerald-500/30 transition-all cursor-pointer active:scale-[0.99]"
     >
+
       <div className="flex items-start justify-between gap-3">
         {/* Left: Station & Date */}
         <div className="min-w-0 flex-1 space-y-1">
@@ -87,6 +89,7 @@ export const FuelCard: React.FC<FuelCardProps> = ({ entry, compact = false }) =>
           <span className="truncate">{entry.location}</span>
         </div>
       )}
-    </Card>
+    </SpotlightCard>
   )
 }
+

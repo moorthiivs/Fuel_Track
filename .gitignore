@@ -37,3 +37,6 @@ android/local.properties
 android/captures
 android/.externalNativeBuild
 android/.cxx
+
+# Local Tools & SDKs
+tools/

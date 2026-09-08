@@ -2,6 +2,8 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import { useFuelStore } from '../../store/fuelStore'
+import { ShinyText } from '../reactbits/ShinyText'
+
 
 export interface HeaderBarProps {
   title?: string
@@ -52,7 +54,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           {title && (
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold text-slate-100 truncate tracking-tight">
-                {title}
+                {title === 'FuelTrack' ? (
+                  <ShinyText text="FuelTrack" speed={3.5} className="font-extrabold tracking-tight" />
+                ) : (
+                  title
+                )}
               </h1>
               {subtitle && (
                 <p className="text-xs text-slate-400 truncate">{subtitle}</p>
@@ -66,7 +72,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <Sparkles className="w-3 h-3" />
-              Demo Mode
+              <ShinyText text="Demo Mode" speed={3} className="text-emerald-300 font-semibold" />
             </span>
           )}
           {rightAction}
@@ -75,3 +81,4 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     </header>
   )
 }
+

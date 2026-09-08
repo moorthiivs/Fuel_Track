@@ -10,7 +10,11 @@ import {
   getGreeting,
 } from '../utils/formatters'
 import { HeaderBar } from '../components/common/HeaderBar'
-import { Card } from '../components/ui/Card'
+import { SpotlightCard } from '../components/reactbits/SpotlightCard'
+import { ShinyText } from '../components/reactbits/ShinyText'
+import { DecryptedText } from '../components/reactbits/DecryptedText'
+import { StarBorder } from '../components/reactbits/StarBorder'
+import { ClickSpark } from '../components/reactbits/ClickSpark'
 import { StatCard } from '../components/ui/StatCard'
 import { Button } from '../components/ui/Button'
 import { FuelCard } from '../components/fuel/FuelCard'
@@ -35,7 +39,7 @@ export const Dashboard: React.FC = () => {
   const greeting = getGreeting()
 
   return (
-    <div className="flex-1 flex flex-col pb-6">
+    <ClickSpark sparkColor="#10b981" sparkCount={6} className="w-full min-h-full flex flex-col pb-8">
       <HeaderBar
         title="FuelTrack"
         subtitle="Automatic 2-Photo Logging"
@@ -48,11 +52,12 @@ export const Dashboard: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             Dashboard
           </span>
-          <h2 className="text-2xl font-extrabold text-slate-100 tracking-tight">
-            {greeting} 👋
+          <h2 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
+            <span>{greeting}</span>
+            <span>👋</span>
           </h2>
           <p className="text-xs text-slate-400">
-            Track fuel expenses and mileage with 2 photos.
+            Track fuel expenses and mileage with <ShinyText text="2 quick photos" speed={3} className="text-emerald-300 font-semibold" />.
           </p>
         </div>
 
@@ -71,9 +76,10 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          <Card
-            variant="accent"
-            className="p-5 border-emerald-500/25 relative overflow-hidden group cursor-pointer"
+          <SpotlightCard
+            spotlightColor="rgba(16, 185, 129, 0.25)"
+            borderColor="rgba(16, 185, 129, 0.45)"
+            className="p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/30 relative overflow-hidden group cursor-pointer shadow-lg shadow-emerald-950/20"
             onClick={() => navigate('/profile')}
           >
             {/* Background Glow */}
@@ -83,7 +89,12 @@ export const Dashboard: React.FC = () => {
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold tracking-wide uppercase">
                   <Car className="w-3.5 h-3.5" />
-                  <span>{activeVehicle.vehicleNumber}</span>
+                  <DecryptedText
+                    text={activeVehicle.vehicleNumber}
+                    speed={30}
+                    maxIterations={8}
+                    encryptedClassName="text-teal-300 font-bold"
+                  />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-100 pt-1">
                   {activeVehicle.makeModel}
@@ -97,7 +108,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 group-hover:scale-105 transition-transform">
                 <Fuel className="w-6 h-6" />
               </div>
             </div>
@@ -123,7 +134,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          </Card>
+          </SpotlightCard>
         </div>
 
         {/* Statistics 2x2 Grid */}
@@ -171,19 +182,22 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Prominent "+ Add Fuel" CTA Card */}
+        {/* Prominent "+ Add Fuel" CTA Card with StarBorder */}
         <div className="pt-1">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => navigate('/add-fuel')}
-            leftIcon={<Plus className="w-5 h-5 stroke-[2.5]" />}
-            className="py-4 shadow-xl shadow-emerald-500/25 text-base"
-          >
-            + Add Fuel Entry (2 Photos)
-          </Button>
+          <StarBorder speed="3s" color="#10b981" className="w-full">
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => navigate('/add-fuel')}
+              leftIcon={<Plus className="w-5 h-5 stroke-[2.5]" />}
+              className="py-4 shadow-xl shadow-emerald-500/25 text-base w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold"
+            >
+              + Add Fuel Entry (2 Photos)
+            </Button>
+          </StarBorder>
         </div>
+
 
         {/* Recent Fuel Entries */}
         <div className="space-y-3 pt-2">
@@ -223,6 +237,7 @@ export const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </ClickSpark>
   )
 }
+

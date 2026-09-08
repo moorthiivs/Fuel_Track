@@ -1,16 +1,19 @@
 import React from 'react'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { SpotlightCard } from '../reactbits/SpotlightCard'
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'elevated' | 'glass' | 'interactive' | 'accent'
   noPadding?: boolean
+  spotlight?: boolean
 }
 
 export const Card: React.FC<CardProps> = ({
   children,
   variant = 'default',
   noPadding = false,
+  spotlight = false,
   className,
   ...props
 }) => {
@@ -24,19 +27,27 @@ export const Card: React.FC<CardProps> = ({
       'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/20 shadow-lg shadow-emerald-950/20',
   }
 
+  const combinedClass = twMerge(
+    clsx(
+      'rounded-2xl overflow-hidden transition-all',
+      variants[variant],
+      !noPadding && 'p-4 sm:p-5',
+      className
+    )
+  )
+
+  if (spotlight) {
+    return (
+      <SpotlightCard className={combinedClass} {...props}>
+        {children}
+      </SpotlightCard>
+    )
+  }
+
   return (
-    <div
-      className={twMerge(
-        clsx(
-          'rounded-2xl overflow-hidden transition-all',
-          variants[variant],
-          !noPadding && 'p-4 sm:p-5',
-          className
-        )
-      )}
-      {...props}
-    >
+    <div className={combinedClass} {...props}>
       {children}
     </div>
   )
 }
+

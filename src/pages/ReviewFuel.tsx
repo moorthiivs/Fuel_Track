@@ -4,6 +4,8 @@ import { HeaderBar } from '../components/common/HeaderBar'
 import { ReviewSummary } from '../components/fuel/ReviewSummary'
 import { SuccessModal } from '../components/fuel/SuccessModal'
 import { Button } from '../components/ui/Button'
+import { StarBorder } from '../components/reactbits/StarBorder'
+import { ClickSpark } from '../components/reactbits/ClickSpark'
 import { useFuelStore } from '../store/fuelStore'
 import { Check, RotateCcw, ShieldCheck } from 'lucide-react'
 import type { FuelEntry } from '../types/fuel'
@@ -47,7 +49,7 @@ export const ReviewFuel: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between pb-4">
+    <ClickSpark sparkColor="#10b981" sparkCount={8} className="w-full min-h-full flex flex-col justify-between pb-4">
       <HeaderBar
         title="Review Fuel Entry"
         subtitle="Everything looks good?"
@@ -85,18 +87,22 @@ export const ReviewFuel: React.FC = () => {
             Retake
           </Button>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleConfirmSave}
-            isLoading={isSaving}
-            leftIcon={<Check className="w-5 h-5 stroke-[3]" />}
-            className="flex-1 py-3.5 shadow-lg shadow-emerald-500/25 text-base"
-          >
-            Confirm & Save
-          </Button>
+          <StarBorder speed="3s" color="#10b981" className="flex-1">
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={handleConfirmSave}
+              isLoading={isSaving}
+              leftIcon={<Check className="w-5 h-5 stroke-[3]" />}
+              className="py-3.5 shadow-lg shadow-emerald-500/25 text-base bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold w-full"
+            >
+              Confirm & Save
+            </Button>
+          </StarBorder>
         </div>
       </div>
+
 
       {/* Success Celebration Modal */}
       <SuccessModal
@@ -104,6 +110,7 @@ export const ReviewFuel: React.FC = () => {
         entry={savedEntry}
         onClose={() => setIsSuccessModalOpen(false)}
       />
-    </div>
+    </ClickSpark>
   )
 }
+

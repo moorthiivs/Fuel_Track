@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
 import { HeaderBar } from '../components/common/HeaderBar'
+import { SpotlightCard } from '../components/reactbits/SpotlightCard'
+import { DecryptedText } from '../components/reactbits/DecryptedText'
+import { ClickSpark } from '../components/reactbits/ClickSpark'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+
 import { useFuelStore } from '../store/fuelStore'
 import { formatDistance } from '../utils/formatters'
 import {
@@ -50,7 +54,7 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pb-8">
+    <ClickSpark sparkColor="#10b981" sparkCount={6} className="w-full min-h-full flex flex-col pb-8">
       <HeaderBar
         title="Vehicle Profile"
         subtitle="Configuration & Settings"
@@ -58,7 +62,11 @@ export const Profile: React.FC = () => {
 
       <div className="px-4 py-4 sm:px-6 space-y-6 max-w-md mx-auto w-full">
         {/* Vehicle Identity Card */}
-        <Card variant="accent" className="p-5 border-emerald-500/30 space-y-4">
+        <SpotlightCard
+          spotlightColor="rgba(16, 185, 129, 0.25)"
+          borderColor="rgba(16, 185, 129, 0.45)"
+          className="p-5 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/30 space-y-4 shadow-lg shadow-emerald-950/20"
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
               <Car className="w-6 h-6" />
@@ -70,8 +78,13 @@ export const Profile: React.FC = () => {
               <h2 className="text-lg font-black text-slate-100">
                 {activeVehicle.makeModel}
               </h2>
-              <div className="text-xs text-slate-400 font-mono">
-                {activeVehicle.vehicleNumber}
+              <div className="text-xs text-slate-300 font-mono font-bold">
+                <DecryptedText
+                  text={activeVehicle.vehicleNumber}
+                  speed={35}
+                  maxIterations={8}
+                  encryptedClassName="text-teal-400 font-bold"
+                />
               </div>
             </div>
           </div>
@@ -91,7 +104,8 @@ export const Profile: React.FC = () => {
               </div>
             </div>
           </div>
-        </Card>
+        </SpotlightCard>
+
 
         {/* Editable Vehicle Settings Form */}
         <div className="space-y-2">
@@ -231,6 +245,7 @@ export const Profile: React.FC = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </ClickSpark>
   )
 }
+
