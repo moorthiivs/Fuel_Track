@@ -71,46 +71,47 @@ export const ReviewSummary: React.FC<ReviewSummaryProps> = ({
   return (
     <div className="space-y-4">
       {/* Primary Card */}
-      <Card variant="accent" className="p-5 border-emerald-500/30 space-y-5">
+      <Card variant="accent" className="p-4 sm:p-5 border-emerald-500/30 space-y-5">
         {/* Section 1: Fuel Metrics */}
         <div className="space-y-3 pb-4 border-b border-slate-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
                 <Fuel className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block truncate">
                   Fuel Quantity & Cost
                 </span>
-                <div className="text-xs text-slate-400">Captured from meter display</div>
+                <div className="text-xs text-slate-400 truncate">Captured from meter display</div>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => openFieldEditor('quantity')}
-              className="text-xs font-semibold text-slate-400 hover:text-emerald-400 flex items-center gap-1 p-1 rounded cursor-pointer"
+              className="text-xs font-semibold text-slate-400 hover:text-emerald-400 flex items-center gap-1 p-1 rounded cursor-pointer shrink-0"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Edit</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
             {/* Quantity */}
             <div
               onClick={() => openFieldEditor('quantity')}
-              className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-all"
+              className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-all min-w-0"
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-xs font-semibold text-slate-400">Volume</span>
+              <div className="flex items-center justify-between gap-1.5 mb-1.5 min-w-0">
+                <span className="text-xs font-semibold text-slate-400 truncate">Volume</span>
                 <ConfidenceBadge
                   score={quantityConfidence}
+                  compact
                   onClick={() => openFieldEditor('quantity')}
                 />
               </div>
-              <div className="text-xl font-extrabold text-slate-100">
+              <div className="text-xl font-extrabold text-slate-100 truncate">
                 {formatLitres(quantity)}
               </div>
             </div>
@@ -118,16 +119,17 @@ export const ReviewSummary: React.FC<ReviewSummaryProps> = ({
             {/* Amount */}
             <div
               onClick={() => openFieldEditor('amount')}
-              className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-all"
+              className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-all min-w-0"
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-xs font-semibold text-slate-400">Total</span>
+              <div className="flex items-center justify-between gap-1.5 mb-1.5 min-w-0">
+                <span className="text-xs font-semibold text-slate-400 truncate">Total</span>
                 <ConfidenceBadge
                   score={amountConfidence}
+                  compact
                   onClick={() => openFieldEditor('amount')}
                 />
               </div>
-              <div className="text-xl font-extrabold text-emerald-400">
+              <div className="text-xl font-extrabold text-emerald-400 truncate">
                 {formatCurrency(amount)}
               </div>
             </div>
@@ -142,16 +144,16 @@ export const ReviewSummary: React.FC<ReviewSummaryProps> = ({
 
         {/* Section 2: Odometer */}
         <div className="space-y-3 pb-4 border-b border-slate-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-2 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 shrink-0">
                 <Gauge className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-wider block truncate">
                   Vehicle Odometer
                 </span>
-                <div className="text-xs text-slate-400">Captured from instrument cluster</div>
+                <div className="text-xs text-slate-400 truncate">Captured from instrument cluster</div>
               </div>
             </div>
 

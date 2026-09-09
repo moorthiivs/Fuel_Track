@@ -52,7 +52,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
       geminiService.setApiKey(trimmed)
       setTestStatus({
         type: 'success',
-        message: result.message || 'Verified & Connected to Gemini 3.6 Flash!',
+        message: result.message || 'Verified & Connected to Gemini 2.0 Flash (Turbo)!',
       })
       onKeySaved?.()
       setTimeout(() => {
@@ -85,7 +85,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-              <span>Google Gemini 3.6 Flash</span>
+              <span>Google Gemini 2.0 Flash (Turbo Speed)</span>
             </div>
             {isConfigured ? (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">

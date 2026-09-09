@@ -18,15 +18,11 @@ class OCRService {
     imageUri: string,
     onStepUpdate?: (stepId: string) => void
   ): Promise<OdometerOCRResult> {
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
     onStepUpdate?.('detecting_cluster')
-    await sleep(250)
 
     // 1. Check if user selected demo photo
     if (imageUri === DEMO_VEHICLE_PHOTO) {
       onStepUpdate?.('reading_odometer')
-      await sleep(250)
       return {
         isValid: true,
         odometer: 48625,
@@ -73,19 +69,13 @@ class OCRService {
     imageUri: string,
     onStepUpdate?: (stepId: string) => void
   ): Promise<MeterOCRResult> {
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
     onStepUpdate?.('detecting')
-    await sleep(250)
 
     // 1. Check if demo photo
     if (imageUri === DEMO_METER_PHOTO) {
       onStepUpdate?.('quantity')
-      await sleep(200)
       onStepUpdate?.('amount')
-      await sleep(200)
       onStepUpdate?.('rate')
-      await sleep(150)
 
       return {
         isValid: true,

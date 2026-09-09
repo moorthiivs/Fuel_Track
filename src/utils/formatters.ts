@@ -33,12 +33,14 @@ export function getGreeting(): string {
 export function getConfidenceBadgeProps(score: number): {
   color: string
   label: string
+  compactLabel: string
   needsVerification: boolean
 } {
   if (score >= 95) {
     return {
       color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
       label: `${score}% confidence`,
+      compactLabel: `${score}%`,
       needsVerification: false,
     }
   }
@@ -46,12 +48,14 @@ export function getConfidenceBadgeProps(score: number): {
     return {
       color: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
       label: `${score}% confidence`,
+      compactLabel: `${score}%`,
       needsVerification: false,
     }
   }
   return {
     color: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
     label: `${score}% ⚠ Please verify`,
+    compactLabel: `${score}%`,
     needsVerification: true,
   }
 }
