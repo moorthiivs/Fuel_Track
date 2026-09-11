@@ -33,16 +33,21 @@ export const ReviewFuel: React.FC = () => {
     updateManualEdit('location', updated.location)
   }
 
-  const handleConfirmSave = async () => {
+  const handleConfirmSave = async (allowOdometerReset: boolean = false) => {
+    const isReset = typeof allowOdometerReset === 'boolean' ? allowOdometerReset : false
     setValidationError(null)
     setIsSaving(true)
     try {
-      const entry = await confirmAndSaveDraft()
+      const entry = await confirmAndSaveDraft({ allowOdometerReset: isReset })
       if (entry) {
         setSavedEntry(entry)
         setIsSuccessModalOpen(true)
       } else {
-        setValidationError('Fuel volume and total amount must be greater than 0. Tap "Edit" on the card to specify them.')
+        const storeError = useFuelStore.getState().errorMessage
+        setValidationError(
+          storeError ||
+            'Fuel volume and total amount must be greater than 0. Tap "Edit" on the card to specify them.'
+        )
       }
     } catch (err: any) {
       console.error('[ReviewFuel] Error saving draft:', err)
@@ -77,9 +82,27 @@ export const ReviewFuel: React.FC = () => {
 
         {/* Validation Error Alert */}
         {validationError && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{validationError}</span>
+          <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 animate-in fade-in space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{validationError}</span>
+            </div>
+            {validationError.includes('cannot be less than previous') && (
+              <div className="pt-2 border-t border-rose-500/20 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-rose-200/80">
+                  New odometer cycle or cluster reset?
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleConfirmSave(true)}
+                  className="text-xs font-bold py-1 px-3 min-h-[32px] bg-rose-950/80 hover:bg-rose-900 border-rose-500/50 text-rose-100 shrink-0 cursor-pointer"
+                >
+                  Save as New Baseline
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -112,7 +135,7 @@ export const ReviewFuel: React.FC = () => {
               variant="primary"
               size="lg"
               fullWidth
-              onClick={handleConfirmSave}
+              onClick={() => handleConfirmSave(false)}
               isLoading={isSaving}
               leftIcon={<Check className="w-5 h-5 stroke-[3]" />}
               className="min-h-[52px] shadow-lg shadow-emerald-500/25 text-base bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold w-full"

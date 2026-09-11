@@ -40,7 +40,7 @@ interface FuelState {
   setDraftLocation: (loc: LocationData) => void
   updateManualEdit: (field: keyof DraftFuelEntry['manualEdits'], value: any) => void
   setProcessing: (isProcessing: boolean, stepText?: string) => void
-  confirmAndSaveDraft: () => Promise<FuelEntry | null>
+  confirmAndSaveDraft: (options?: { allowOdometerReset?: boolean }) => Promise<FuelEntry | null>
   resetDraft: () => void
   getEntryById: (id: string) => FuelEntry | undefined
   updateActiveVehicle: (updated: Partial<Vehicle>) => Promise<void>
@@ -149,7 +149,7 @@ export const useFuelStore = create<FuelState>()(
       /**
        * Confirm and atomically persist draft fuel entry to SQLite.
        */
-      confirmAndSaveDraft: async () => {
+      confirmAndSaveDraft: async (options?: { allowOdometerReset?: boolean }) => {
         const state = get()
         const { draftEntry, fuelEntries } = state
         const activeVehicle = state.getActiveVehicle()
@@ -183,9 +183,14 @@ export const useFuelStore = create<FuelState>()(
           .filter((e) => e.vehicleNumber === activeVehicle.vehicleNumber)
           .sort((a, b) => b.odometer - a.odometer)[0]
 
-        const previousOdometer =
+        let previousOdometer: number | undefined =
           previousEntry?.odometer ??
           (activeVehicle.currentOdometer > 0 ? activeVehicle.currentOdometer : undefined)
+
+        // If user requested odometer reset (or previous entries were seeded/higher and user explicitly forces new baseline)
+        if (options?.allowOdometerReset === true && previousOdometer !== undefined && odometer < previousOdometer) {
+          previousOdometer = undefined
+        }
 
         // Strict Validation
         const metrics = validateAndCalculateMetrics(
@@ -197,9 +202,19 @@ export const useFuelStore = create<FuelState>()(
         )
 
         if (!metrics.isValid) {
-          console.warn('[FuelStore] Validation failed:', metrics.errors)
+          let validationMsg: string
+          if (quantity <= 0 && amount <= 0) {
+            validationMsg =
+              'Fuel volume and total amount must be greater than 0. Tap "Edit" on the card to specify them.'
+          } else {
+            validationMsg = metrics.errors.join('. ')
+          }
+          console.warn('[FuelStore] Validation failed:', validationMsg)
+          set({ errorMessage: validationMsg })
           return null
         }
+
+        set({ errorMessage: null })
 
         const now = new Date()
         const capturedAt = now.toISOString()
@@ -279,13 +294,19 @@ export const useFuelStore = create<FuelState>()(
               verificationStatus: 'USER_CONFIRMED',
             },
             photosPayload,
-            ocrPayload
+            ocrPayload,
+            options
           )
 
           // 4. Update in-memory reactive state
           const updatedVehicles = state.vehicles.map((v) =>
             v.id === activeVehicle.id
-              ? { ...v, currentOdometer: Math.max(v.currentOdometer, odometer) }
+              ? {
+                  ...v,
+                  currentOdometer: options?.allowOdometerReset === true
+                    ? odometer
+                    : Math.max(v.currentOdometer, odometer),
+                }
               : v
           )
 

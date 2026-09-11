@@ -151,6 +151,41 @@ describe('FuelStore (Zustand + SQLite Integration)', () => {
     expect(vehicle?.currentOdometer).toBe(10500)
   })
 
+  it('allows saving as a new baseline when odometer is reset or lower than previous', async () => {
+    const store = useFuelStore.getState()
+    await store.loadInitialData()
+
+    // Odometer 5725 is lower than vehicle's current odometer (10000)
+    store.setDraftMeter('data:image/jpeg;base64,meter', {
+      isValid: true,
+      quantity: 32.45,
+      amount: 3245,
+      rate: 100,
+      confidence: { quantity: 98, amount: 96, rate: 100 },
+    })
+    store.setDraftVehicle('data:image/jpeg;base64,vehicle', {
+      isValid: true,
+      odometer: 5725,
+      confidence: 100,
+    })
+
+    // Normal save attempt fails with odometer error
+    const failedAttempt = await useFuelStore.getState().confirmAndSaveDraft()
+    expect(failedAttempt).toBeNull()
+    expect(useFuelStore.getState().errorMessage).toContain('cannot be less than previous recorded reading')
+
+    // Saving with allowOdometerReset: true succeeds
+    const savedBaseline = await useFuelStore.getState().confirmAndSaveDraft({ allowOdometerReset: true })
+    expect(savedBaseline).not.toBeNull()
+    expect(savedBaseline?.odometer).toBe(5725)
+    expect(savedBaseline?.previousOdometer).toBeUndefined()
+    expect(savedBaseline?.distance).toBeUndefined()
+
+    const state = useFuelStore.getState()
+    const vehicle = state.vehicles.find((v) => v.id === 'veh-store-01')
+    expect(vehicle?.currentOdometer).toBe(5725)
+  })
+
   it('deletes fuel entry from SQLite and removes it from reactive store state', async () => {
     const store = useFuelStore.getState()
     await store.loadInitialData()

@@ -63,7 +63,8 @@ export class FuelRepository {
   async createWithTransaction(
     entry: FuelEntryInput,
     photos: Omit<PhotoRecord, 'id' | 'fuelEntryId'>[] = [],
-    ocrResults: Omit<OcrRecord, 'id' | 'fuelEntryId'>[] = []
+    ocrResults: Omit<OcrRecord, 'id' | 'fuelEntryId'>[] = [],
+    options?: { allowOdometerReset?: boolean }
   ): Promise<FuelEntry> {
     const driver = await this.getDriver()
     const id = entry.id || `fuel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
@@ -146,12 +147,21 @@ export class FuelRepository {
       }
 
       // 4. Update Vehicle Current Odometer
-      await tx.execute(
-        `UPDATE vehicles
-         SET currentOdometer = MAX(currentOdometer, ?), updatedAt = ?
-         WHERE id = ?;`,
-        [entry.odometer, now, entry.vehicleId]
-      )
+      if (options?.allowOdometerReset === true) {
+        await tx.execute(
+          `UPDATE vehicles
+           SET currentOdometer = ?, updatedAt = ?
+           WHERE id = ?;`,
+          [entry.odometer, now, entry.vehicleId]
+        )
+      } else {
+        await tx.execute(
+          `UPDATE vehicles
+           SET currentOdometer = MAX(currentOdometer, ?), updatedAt = ?
+           WHERE id = ?;`,
+          [entry.odometer, now, entry.vehicleId]
+        )
+      }
 
       const dateStr = (entry.capturedAt || now).split('T')[0]
       const timeStr = (entry.capturedAt || now).split('T')[1]?.slice(0, 5) || '12:00'

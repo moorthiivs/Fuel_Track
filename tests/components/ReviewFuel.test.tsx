@@ -120,6 +120,59 @@ describe('ReviewFuel Component', () => {
     })
   })
 
+  it('displays odometer mismatch error and allows saving as new baseline', async () => {
+    // Current odometer (5725) is lower than vehicle odometer (20000)
+    useFuelStore.setState({
+      draftEntry: {
+        meterPhotoUri: 'data:image/jpeg;base64,meter',
+        meterOCR: {
+          isValid: true,
+          quantity: 32.45,
+          amount: 3245,
+          rate: 100,
+          confidence: { quantity: 98, amount: 96, rate: 100 },
+        },
+        vehiclePhotoUri: 'data:image/jpeg;base64,vehicle',
+        vehicleOCR: {
+          isValid: true,
+          odometer: 5725,
+          confidence: 100,
+        },
+        location: {
+          stationName: 'Indian Oil - Erode Bunk',
+          location: 'Erode, Tamil Nadu',
+          latitude: 12.78,
+          longitude: 80.22,
+        },
+        manualEdits: {},
+      },
+    })
+
+    render(
+      <MemoryRouter>
+        <ReviewFuel />
+      </MemoryRouter>
+    )
+
+    const saveButton = screen.getByText('Confirm & Save')
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Current odometer \(5725 km\) cannot be less than previous recorded reading \(20000 km\)/)
+      ).toBeInTheDocument()
+    })
+
+    const baselineButton = screen.getByText('Save as New Baseline')
+    expect(baselineButton).toBeInTheDocument()
+
+    fireEvent.click(baselineButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Fuel Entry Saved!')).toBeInTheDocument()
+    })
+  })
+
   it('successfully saves valid draft and displays celebration modal', async () => {
     render(
       <MemoryRouter>
