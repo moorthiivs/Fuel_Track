@@ -176,6 +176,7 @@ export class CapacitorSqliteDriver implements DatabaseDriver {
   private dbName = 'fueltrack'
   private connection: any = null
   private sqlitePlugin: any = null
+  private inTransaction = false
 
   async init(): Promise<void> {
     if (this.connection) return
@@ -204,8 +205,11 @@ export class CapacitorSqliteDriver implements DatabaseDriver {
         )
       }
 
-      await this.connection.open()
-      await this.connection.execute('PRAGMA foreign_keys = ON;')
+      const isOpen = (await this.connection.isDBOpen()).result
+      if (!isOpen) {
+        await this.connection.open()
+      }
+      await this.connection.execute('PRAGMA foreign_keys = ON;', false)
     } catch (err) {
       console.error('[CapacitorSqliteDriver] Failed to open native connection:', err)
       throw err
@@ -214,33 +218,45 @@ export class CapacitorSqliteDriver implements DatabaseDriver {
 
   async execute(sql: string, params: any[] = []): Promise<void> {
     if (!this.connection) await this.init()
+    if (!this.connection) throw new Error('[CapacitorSqliteDriver] Database not initialized')
+
+    const transaction = !this.inTransaction
     if (!params || params.length === 0) {
-      await this.connection.execute(sql)
+      await this.connection.execute(sql, transaction)
     } else {
-      await this.connection.run(sql, params)
+      await this.connection.run(sql, params, transaction)
     }
   }
 
   async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     if (!this.connection) await this.init()
+    if (!this.connection) throw new Error('[CapacitorSqliteDriver] Database not initialized')
     const res = await this.connection.query(sql, params || [])
     return (res.values || []) as T[]
   }
 
   async runTransaction<T>(callback: (tx: DatabaseDriver) => Promise<T>): Promise<T> {
     if (!this.connection) await this.init()
-    await this.connection.execute('BEGIN TRANSACTION;')
+    if (!this.connection) throw new Error('[CapacitorSqliteDriver] Database not initialized')
+
+    this.inTransaction = true
     try {
+      await this.connection.beginTransaction()
       const result = await callback(this)
-      await this.connection.execute('COMMIT;')
+      await this.connection.commitTransaction()
       return result
     } catch (error) {
       try {
-        await this.connection.execute('ROLLBACK;')
+        const active = await this.connection.isTransactionActive()
+        if (active?.result) {
+          await this.connection.rollbackTransaction()
+        }
       } catch (rollbackError) {
         console.warn('[CapacitorSqliteDriver] Rollback error:', rollbackError)
       }
       throw error
+    } finally {
+      this.inTransaction = false
     }
   }
 
