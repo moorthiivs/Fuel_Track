@@ -25,7 +25,7 @@ export const CaptureVehicle: React.FC = () => {
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false)
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState<boolean>(false)
   const [manualOdoInput, setManualOdoInput] = useState<string>(() =>
-    String(activeVehicle?.currentOdometer || '5725')
+    activeVehicle?.currentOdometer ? String(activeVehicle.currentOdometer) : ''
   )
 
   const handleCapture = async () => {
@@ -87,7 +87,11 @@ export const CaptureVehicle: React.FC = () => {
 
   const handleSaveManualOdometer = async (e: React.FormEvent) => {
     e.preventDefault()
-    const odoNum = parseInt(manualOdoInput, 10) || 5725
+    const odoNum = parseInt(manualOdoInput, 10)
+    if (isNaN(odoNum) || odoNum <= 0) {
+      setValidationError('Please enter a valid odometer reading greater than 0.')
+      return
+    }
     updateManualEdit('odometer', odoNum)
     setDraftVehicle(photoUri || '', {
       isValid: true,

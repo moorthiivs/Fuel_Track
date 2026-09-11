@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { geminiService } from '../../services/geminiService'
 import {
   Sparkles,
@@ -28,6 +29,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
 }) => {
   const [apiKey, setApiKey] = useState(() => geminiService.getApiKey())
   const [showKey, setShowKey] = useState(false)
+  const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [testStatus, setTestStatus] = useState<{
     type: 'success' | 'error' | null
@@ -66,13 +68,12 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
     }
   }
 
-  const handleRemoveKey = () => {
-    if (window.confirm('Remove saved Gemini API Key and switch to local offline mode?')) {
-      geminiService.removeApiKey()
-      setApiKey('')
-      setTestStatus({ type: null, message: '' })
-      onKeySaved?.()
-    }
+  const handleRemoveConfirm = () => {
+    geminiService.removeApiKey()
+    setApiKey('')
+    setTestStatus({ type: null, message: '' })
+    setIsRemoveConfirmOpen(false)
+    onKeySaved?.()
   }
 
   const isConfigured = geminiService.isConfigured()
@@ -81,7 +82,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Gemini AI Vision Engine">
       <div className="space-y-4 text-slate-200 pb-3">
         {/* Banner with Glowing Gradient */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-slate-900 border border-purple-500/30 space-y-2 relative overflow-hidden">
+        <div className="p-4 rounded-2xl bg-linear-to-r from-indigo-950/60 via-purple-950/40 to-slate-900 border border-purple-500/30 space-y-2 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
@@ -109,7 +110,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
           <div>
             <label
               htmlFor="gemini-key-input"
-              className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between"
+              className="text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between"
             >
               <span className="flex items-center gap-1.5">
                 <Key className="w-3.5 h-3.5 text-purple-400" />
@@ -169,7 +170,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={handleRemoveKey}
+                onClick={() => setIsRemoveConfirmOpen(true)}
                 leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-400" />}
                 className="text-xs text-rose-300 hover:bg-rose-950/40 border-rose-900/40"
               >
@@ -199,7 +200,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
                   <Sparkles className="w-3.5 h-3.5" />
                 )
               }
-              className="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-900/30 border-none"
+              className="text-xs bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-900/30 border-none"
             >
               {isTesting ? 'Verifying...' : 'Test & Save Key'}
             </Button>
@@ -235,6 +236,17 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
           <span>Local on-device OCR is used automatically if offline</span>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isRemoveConfirmOpen}
+        title="Remove Saved Key"
+        message="Remove saved Gemini API Key and switch to local offline OCR processing?"
+        confirmText="Remove Key"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleRemoveConfirm}
+        onCancel={() => setIsRemoveConfirmOpen(false)}
+      />
     </Modal>
   )
 }

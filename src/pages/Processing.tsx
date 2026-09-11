@@ -15,18 +15,6 @@ export const Processing: React.FC = () => {
 
   const meterResult = draftEntry.meterOCR
 
-  // If no valid meter OCR data exists, redirect back to capture
-  useEffect(() => {
-    if (!meterResult || !meterResult.isValid) {
-      navigate('/add-fuel/meter', { replace: true })
-    }
-  }, [meterResult, navigate])
-
-  // Guard: don't render if no valid data
-  if (!meterResult || !meterResult.isValid) {
-    return null
-  }
-
   const [steps, setSteps] = useState<StepItem[]>([
     {
       id: 'capture',
@@ -62,7 +50,16 @@ export const Processing: React.FC = () => {
 
   const [isCompleted, setIsCompleted] = useState(false)
 
+  // If no valid meter OCR data exists, redirect back to capture
   useEffect(() => {
+    if (!meterResult || !meterResult.isValid) {
+      navigate('/add-fuel/meter', { replace: true })
+    }
+  }, [meterResult, navigate])
+
+  useEffect(() => {
+    if (!meterResult || !meterResult.isValid) return
+
     // Step progression animation sequence
     const t1 = setTimeout(() => {
       setSteps((prev) =>
@@ -81,7 +78,7 @@ export const Processing: React.FC = () => {
             return {
               ...s,
               status: 'completed',
-              sublabel: `Extracted: ${formatLitres(meterResult.quantity)} (98%)`,
+              sublabel: `Extracted: ${formatLitres(meterResult.quantity)} (${meterResult.confidence?.quantity ?? 98}%)`,
             }
           if (s.id === 'amount') return { ...s, status: 'running' }
           return s
@@ -96,7 +93,7 @@ export const Processing: React.FC = () => {
             return {
               ...s,
               status: 'completed',
-              sublabel: `Extracted: ${formatCurrency(meterResult.amount)} (96%)`,
+              sublabel: `Extracted: ${formatCurrency(meterResult.amount)} (${meterResult.confidence?.amount ?? 96}%)`,
             }
           if (s.id === 'rate') return { ...s, status: 'running' }
           return s
@@ -126,6 +123,11 @@ export const Processing: React.FC = () => {
       clearTimeout(t4)
     }
   }, [meterResult])
+
+  // Guard: don't render if no valid data
+  if (!meterResult || !meterResult.isValid) {
+    return null
+  }
 
   return (
     <div className="flex-1 flex flex-col pb-6">

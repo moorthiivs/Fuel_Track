@@ -79,13 +79,13 @@ class FuelService {
     // Calculate average mileage from distance / litres
     const validMileageEntries = entries.filter((e) => e.mileage && e.mileage > 0)
     const averageMileage = validMileageEntries.length > 0
-      ? Number((validMileageEntries.reduce((sum, e) => sum + (e.mileage || 0), 0) / validMileageEntries.length).toFixed(1))
-      : 15.5
+      ? Number((validMileageEntries.reduce((sum, e) => sum + (e.mileage || 0), 0) / validMileageEntries.length).toFixed(2))
+      : 0
 
     return {
       totalCost,
       totalLitres,
-      totalDistance: totalDistance || 1245,
+      totalDistance,
       averageMileage,
       lastOdometer: latest.odometer,
     }

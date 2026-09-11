@@ -1,13 +1,37 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNavigation } from '../components/common/BottomNavigation'
 import { AuroraBackground } from '../components/reactbits/AuroraBackground'
+import { DatabaseErrorScreen } from '../components/common/DatabaseErrorScreen'
+import { useFuelStore } from '../store/fuelStore'
 import { Smartphone, Monitor, Signal, Wifi, Battery } from 'lucide-react'
 import { clsx } from 'clsx'
 
 export const MobileLayout: React.FC = () => {
   const [devicePreview, setDevicePreview] = useState<boolean>(true)
   const location = useLocation()
+  const loadInitialData = useFuelStore((s) => s.loadInitialData)
+  const isDatabaseReady = useFuelStore((s) => s.isDatabaseReady)
+  const errorMessage = useFuelStore((s) => s.errorMessage)
+  const isLoading = useFuelStore((s) => s.isLoading)
+
+  useEffect(() => {
+    loadInitialData().catch((err) => {
+      console.warn('[MobileLayout] Initial database load error:', err)
+    })
+  }, [loadInitialData])
+
+  if (!isDatabaseReady && errorMessage && !isLoading) {
+    return (
+      <DatabaseErrorScreen
+        errorMessage={errorMessage}
+        onRetry={() => {
+          loadInitialData().catch(() => {})
+        }}
+        isRetrying={isLoading}
+      />
+    )
+  }
 
   // Dynamic status bar clock for desktop preview only
   const timeString = new Date().toLocaleTimeString('en-US', {

@@ -34,22 +34,22 @@ export const ReviewSummary: React.FC<ReviewSummaryProps> = ({
   const [focusField, setFocusField] = useState<keyof EditableValues | null>(null)
 
   // Current working values (manual edits supersede OCR)
-  const quantity = draft.manualEdits.quantity ?? draft.meterOCR?.quantity ?? 32.45
-  const amount = draft.manualEdits.amount ?? draft.meterOCR?.amount ?? 3245
-  const rate = quantity > 0 ? Number((amount / quantity).toFixed(2)) : 100
-  const odometer = draft.manualEdits.odometer ?? draft.vehicleOCR?.odometer ?? 48625
+  const quantity = draft.manualEdits.quantity ?? draft.meterOCR?.quantity ?? 0
+  const amount = draft.manualEdits.amount ?? draft.meterOCR?.amount ?? 0
+  const rate = quantity > 0 ? Number((amount / quantity).toFixed(2)) : 0
+  const odometer = draft.manualEdits.odometer ?? draft.vehicleOCR?.odometer ?? vehicle.currentOdometer
   const stationName =
     draft.manualEdits.stationName ??
     draft.location?.stationName ??
-    'Indian Oil - XYZ Bunk'
+    'Tap to specify fuel station'
   const location =
     draft.manualEdits.location ??
     draft.location?.location ??
-    'Kelambakkam, Chennai'
+    'Tap to specify location'
 
-  const quantityConfidence = draft.meterOCR?.confidence.quantity ?? 98
-  const amountConfidence = draft.meterOCR?.confidence.amount ?? 96
-  const odometerConfidence = draft.vehicleOCR?.confidence ?? 99
+  const quantityConfidence = draft.meterOCR?.confidence.quantity ?? 0
+  const amountConfidence = draft.meterOCR?.confidence.amount ?? 0
+  const odometerConfidence = draft.vehicleOCR?.confidence ?? 0
 
   const now = new Date()
   const dateFormatted = now.toLocaleDateString('en-GB', {

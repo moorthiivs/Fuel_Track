@@ -24,8 +24,8 @@ export const CaptureMeter: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false)
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState<boolean>(false)
-  const [manualQty, setManualQty] = useState<string>('32.45')
-  const [manualAmt, setManualAmt] = useState<string>('3245')
+  const [manualQty, setManualQty] = useState<string>('')
+  const [manualAmt, setManualAmt] = useState<string>('')
 
   const handleCapture = async () => {
     setValidationError(null)
@@ -87,8 +87,12 @@ export const CaptureMeter: React.FC = () => {
 
   const handleSaveManualMeter = (e: React.FormEvent) => {
     e.preventDefault()
-    const qty = parseFloat(manualQty) || 32.45
-    const amt = parseFloat(manualAmt) || 3245
+    const qty = parseFloat(manualQty)
+    const amt = parseFloat(manualAmt)
+    if (isNaN(qty) || qty <= 0 || isNaN(amt) || amt <= 0) {
+      setValidationError('Please enter a valid fuel quantity and amount greater than 0.')
+      return
+    }
     const rate = Number((amt / qty).toFixed(2))
 
     updateManualEdit('quantity', qty)

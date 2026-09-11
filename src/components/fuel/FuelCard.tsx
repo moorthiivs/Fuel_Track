@@ -29,9 +29,9 @@ export const FuelCard: React.FC<FuelCardProps> = ({ entry, compact = false }) =>
             <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 border border-emerald-500/20">
               <Fuel className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-100 truncate group-hover:text-emerald-400 transition-colors">
+            <h2 className="text-sm font-bold text-slate-100 truncate group-hover:text-emerald-400 transition-colors">
               {entry.stationName}
-            </h3>
+            </h2>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-400 font-medium pl-0.5">

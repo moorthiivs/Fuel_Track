@@ -28,12 +28,13 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 }) => {
   const [values, setValues] = useState<EditableValues>(initialValues)
 
-  // Sync state when modal opens with fresh initial values
-  React.useEffect(() => {
-    if (isOpen) {
-      setValues(initialValues)
-    }
-  }, [isOpen, initialValues])
+  const [prevProps, setPrevProps] = useState({ isOpen, initialValues })
+  if (isOpen && (!prevProps.isOpen || initialValues !== prevProps.initialValues)) {
+    setPrevProps({ isOpen, initialValues })
+    setValues(initialValues)
+  } else if (!isOpen && prevProps.isOpen) {
+    setPrevProps({ isOpen, initialValues })
+  }
 
   const handleChange = (field: keyof EditableValues, val: any) => {
     setValues((prev) => ({
@@ -61,13 +62,16 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 
         {/* Quantity */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="edit-quantity" className="block text-xs font-semibold text-slate-300 mb-1.5">
             Fuel Quantity (Litres)
           </label>
           <div className="relative">
             <input
+              id="edit-quantity"
               type="number"
               step="0.01"
+              min="0.01"
+              inputMode="decimal"
               autoFocus={focusField === 'quantity'}
               value={values.quantity || ''}
               onChange={(e) => handleChange('quantity', e.target.value)}
@@ -83,13 +87,16 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 
         {/* Amount */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="edit-amount" className="block text-xs font-semibold text-slate-300 mb-1.5">
             Total Amount (₹)
           </label>
           <div className="relative">
             <input
+              id="edit-amount"
               type="number"
-              step="1"
+              step="0.01"
+              min="0.01"
+              inputMode="decimal"
               autoFocus={focusField === 'amount'}
               value={values.amount || ''}
               onChange={(e) => handleChange('amount', e.target.value)}
@@ -105,13 +112,16 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 
         {/* Odometer */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="edit-odometer" className="block text-xs font-semibold text-slate-300 mb-1.5">
             Vehicle Odometer Reading (km)
           </label>
           <div className="relative">
             <input
+              id="edit-odometer"
               type="number"
               step="1"
+              min="0"
+              inputMode="numeric"
               autoFocus={focusField === 'odometer'}
               value={values.odometer || ''}
               onChange={(e) => handleChange('odometer', e.target.value)}
@@ -127,10 +137,11 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 
         {/* Fuel Station Name */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="edit-station" className="block text-xs font-semibold text-slate-300 mb-1.5">
             Fuel Station Name
           </label>
           <input
+            id="edit-station"
             type="text"
             value={values.stationName}
             onChange={(e) => handleChange('stationName', e.target.value)}
@@ -142,10 +153,11 @@ export const InlineEditModal: React.FC<InlineEditModalProps> = ({
 
         {/* Locality */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          <label htmlFor="edit-location" className="block text-xs font-semibold text-slate-300 mb-1.5">
             Location / Area
           </label>
           <input
+            id="edit-location"
             type="text"
             value={values.location}
             onChange={(e) => handleChange('location', e.target.value)}

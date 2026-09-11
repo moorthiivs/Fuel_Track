@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button'
 import { StarBorder } from '../components/reactbits/StarBorder'
 import { ClickSpark } from '../components/reactbits/ClickSpark'
 import { useFuelStore } from '../store/fuelStore'
-import { Check, RotateCcw, ShieldCheck } from 'lucide-react'
+import { Check, RotateCcw, ShieldCheck, AlertCircle } from 'lucide-react'
 import type { FuelEntry } from '../types/fuel'
 import type { EditableValues } from '../components/fuel/InlineEditModal'
 
@@ -22,8 +22,10 @@ export const ReviewFuel: React.FC = () => {
   const [savedEntry, setSavedEntry] = useState<FuelEntry | null>(null)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const handleUpdateValues = (updated: EditableValues) => {
+    setValidationError(null)
     updateManualEdit('quantity', updated.quantity)
     updateManualEdit('amount', updated.amount)
     updateManualEdit('odometer', updated.odometer)
@@ -31,16 +33,23 @@ export const ReviewFuel: React.FC = () => {
     updateManualEdit('location', updated.location)
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
+    setValidationError(null)
     setIsSaving(true)
-    setTimeout(() => {
-      const entry = confirmAndSaveDraft()
-      setIsSaving(false)
+    try {
+      const entry = await confirmAndSaveDraft()
       if (entry) {
         setSavedEntry(entry)
         setIsSuccessModalOpen(true)
+      } else {
+        setValidationError('Fuel volume and total amount must be greater than 0. Tap "Edit" on the card to specify them.')
       }
-    }, 400)
+    } catch (err: any) {
+      console.error('[ReviewFuel] Error saving draft:', err)
+      setValidationError(err?.message || 'Unable to save fuel entry to database. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleRetake = () => {
@@ -65,6 +74,14 @@ export const ReviewFuel: React.FC = () => {
             Data automatically populated from 2 photos & GPS. Verify below before saving.
           </span>
         </div>
+
+        {/* Validation Error Alert */}
+        {validationError && (
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <span>{validationError}</span>
+          </div>
+        )}
 
         {/* Core Review Card */}
         <ReviewSummary

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sparkles } from 'lucide-react'
-import { useFuelStore } from '../../store/fuelStore'
 import { ShinyText } from '../reactbits/ShinyText'
 import { GeminiApiKeyModal } from './GeminiApiKeyModal'
 import { geminiService } from '../../services/geminiService'
@@ -22,7 +21,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   rightAction,
 }) => {
   const navigate = useNavigate()
-  const demoMode = useFuelStore((s) => s.demoMode)
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false)
   const [, setForceRender] = useState(0)
 
@@ -48,7 +46,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <button
                 type="button"
                 onClick={handleBack}
-                className="p-2 -ml-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="min-h-11 min-w-11 flex items-center justify-center p-2 -ml-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Go back"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -105,13 +103,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 </>
               )}
             </button>
-
-            {demoMode && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>Demo</span>
-              </span>
-            )}
 
             {rightAction}
           </div>

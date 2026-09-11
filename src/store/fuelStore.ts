@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import initialFuelData from '../mocks/fuelData.json'
+import { vehicleRepository } from '../database/repositories/vehicleRepository'
+import { fuelRepository } from '../database/repositories/fuelRepository'
+import { photoStorageService } from '../services/photoStorageService'
+import { validateAndCalculateMetrics } from '../validation/fuelValidation'
 import initialVehicles from '../mocks/vehicles.json'
-import { DEMO_METER_PHOTO, DEMO_VEHICLE_PHOTO } from '../mocks/demoImages'
-import { fuelService } from '../services/fuelService'
+import initialFuelData from '../mocks/fuelData.json'
 import type {
   DraftFuelEntry,
   FuelEntry,
@@ -27,20 +29,24 @@ interface FuelState {
   isProcessing: boolean
   processingStepText: string
   demoMode: boolean
+  isDatabaseReady: boolean
+  isLoading: boolean
+  errorMessage: string | null
 
   // Actions
+  loadInitialData: () => Promise<void>
   setDraftMeter: (photoUri: string, ocr: MeterOCRResult) => void
   setDraftVehicle: (photoUri: string, ocr: OdometerOCRResult) => void
   setDraftLocation: (loc: LocationData) => void
   updateManualEdit: (field: keyof DraftFuelEntry['manualEdits'], value: any) => void
   setProcessing: (isProcessing: boolean, stepText?: string) => void
-  confirmAndSaveDraft: () => FuelEntry | null
+  confirmAndSaveDraft: () => Promise<FuelEntry | null>
   resetDraft: () => void
   getEntryById: (id: string) => FuelEntry | undefined
-  updateActiveVehicle: (updated: Partial<Vehicle>) => void
+  updateActiveVehicle: (updated: Partial<Vehicle>) => Promise<void>
   toggleDemoMode: () => void
-  resetToMockData: () => void
-  deleteFuelEntry: (id: string) => void
+  resetToMockData: () => Promise<void>
+  deleteFuelEntry: (id: string) => Promise<boolean>
 }
 
 const initialDraft: DraftFuelEntry = {
@@ -62,13 +68,42 @@ export const useFuelStore = create<FuelState>()(
       isProcessing: false,
       processingStepText: '',
       demoMode: true,
+      isDatabaseReady: false,
+      isLoading: false,
+      errorMessage: null,
 
       getActiveVehicle: () => {
         const state = get()
         return (
           state.vehicles.find((v) => v.id === state.activeVehicleId) ||
-          state.vehicles[0]
+          state.vehicles[0] ||
+          (initialVehicles[0] as Vehicle)
         )
+      },
+
+      /**
+       * Asynchronously load vehicles and fuel entries from SQLite.
+       */
+      loadInitialData: async () => {
+        set({ isLoading: true, errorMessage: null })
+        try {
+          const vehicles = await vehicleRepository.getAll()
+          const entries = await fuelRepository.getAll()
+
+          set({
+            vehicles: vehicles.length > 0 ? vehicles : (initialVehicles as Vehicle[]),
+            fuelEntries: entries.length > 0 ? entries : (initialFuelData as FuelEntry[]),
+            isDatabaseReady: true,
+            isLoading: false,
+          })
+        } catch (err: any) {
+          console.warn('[FuelStore] Database loading error, keeping in-memory fallback:', err)
+          set({
+            isDatabaseReady: false,
+            isLoading: false,
+            errorMessage: err?.message || 'Database initialization error',
+          })
+        }
       },
 
       setDraftMeter: (photoUri, ocr) =>
@@ -111,7 +146,10 @@ export const useFuelStore = create<FuelState>()(
       setProcessing: (isProcessing, stepText = '') =>
         set({ isProcessing, processingStepText: stepText }),
 
-      confirmAndSaveDraft: () => {
+      /**
+       * Confirm and atomically persist draft fuel entry to SQLite.
+       */
+      confirmAndSaveDraft: async () => {
         const state = get()
         const { draftEntry, fuelEntries } = state
         const activeVehicle = state.getActiveVehicle()
@@ -120,89 +158,148 @@ export const useFuelStore = create<FuelState>()(
         const quantity =
           draftEntry.manualEdits.quantity ??
           draftEntry.meterOCR?.quantity ??
-          32.45
+          0
         const amount =
           draftEntry.manualEdits.amount ??
           draftEntry.meterOCR?.amount ??
-          3245
+          0
         const odometer =
           draftEntry.manualEdits.odometer ??
           draftEntry.vehicleOCR?.odometer ??
-          48625
+          activeVehicle.currentOdometer
         const stationName =
           draftEntry.manualEdits.stationName ??
           draftEntry.location?.stationName ??
-          'Indian Oil - XYZ Bunk'
+          'Fuel Station'
         const location =
           draftEntry.manualEdits.location ??
           draftEntry.location?.location ??
-          'Kelambakkam, Chennai'
-        const latitude = draftEntry.location?.latitude ?? 12.7879
-        const longitude = draftEntry.location?.longitude ?? 80.2281
+          'Location'
+        const latitude = draftEntry.location?.latitude ?? 0
+        const longitude = draftEntry.location?.longitude ?? 0
 
         // Previous odometer lookup
         const previousEntry = fuelEntries
           .filter((e) => e.vehicleNumber === activeVehicle.vehicleNumber)
           .sort((a, b) => b.odometer - a.odometer)[0]
 
-        const previousOdometer = previousEntry?.odometer ?? 48120
-        const { rate, distance, mileage } = fuelService.calculateMetrics(
+        const previousOdometer =
+          previousEntry?.odometer ??
+          (activeVehicle.currentOdometer > 0 ? activeVehicle.currentOdometer : undefined)
+
+        // Strict Validation
+        const metrics = validateAndCalculateMetrics(
           odometer,
           previousOdometer,
-          quantity,
-          amount
-        )
-
-        const now = new Date()
-        const dateStr = now.toISOString().split('T')[0]
-        const timeStr = now.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        })
-
-        const newEntry: FuelEntry = {
-          id: `fuel-${Date.now().toString(36)}`,
-          vehicleNumber: activeVehicle.vehicleNumber,
-          fuelType: activeVehicle.fuelType,
-          stationName,
-          location,
-          latitude,
-          longitude,
           quantity,
           amount,
-          rate,
-          odometer,
-          previousOdometer,
-          distance,
-          mileage,
-          date: dateStr,
-          time: timeStr,
-          meterPhotoUri: draftEntry.meterPhotoUri || DEMO_METER_PHOTO,
-          vehiclePhotoUri: draftEntry.vehiclePhotoUri || DEMO_VEHICLE_PHOTO,
-          ocrConfidence: {
-            quantity: draftEntry.meterOCR?.confidence.quantity ?? 98,
-            amount: draftEntry.meterOCR?.confidence.amount ?? 96,
-            rate: draftEntry.meterOCR?.confidence.rate ?? 99,
-            odometer: draftEntry.vehicleOCR?.confidence ?? 99,
-          },
-          createdAt: now.toISOString(),
-        }
-
-        // Update active vehicle's odometer
-        const updatedVehicles = state.vehicles.map((v) =>
-          v.id === activeVehicle.id
-            ? { ...v, currentOdometer: Math.max(v.currentOdometer, odometer) }
-            : v
+          activeVehicle.tankCapacity
         )
 
-        set({
-          fuelEntries: [newEntry, ...fuelEntries],
-          vehicles: updatedVehicles,
-          draftEntry: initialDraft,
-        })
+        if (!metrics.isValid) {
+          console.warn('[FuelStore] Validation failed:', metrics.errors)
+          return null
+        }
 
-        return newEntry
+        const now = new Date()
+        const capturedAt = now.toISOString()
+        const entryId = `fuel-${Date.now().toString(36)}`
+
+        // 1. Permanently store photos in private application storage
+        let persistentMeterPath = draftEntry.meterPhotoUri || ''
+        let persistentVehiclePath = draftEntry.vehiclePhotoUri || ''
+
+        if (draftEntry.meterPhotoUri && !draftEntry.meterPhotoUri.startsWith('data:')) {
+          const res = await photoStorageService.savePhotoPermanently(
+            draftEntry.meterPhotoUri,
+            'METER'
+          )
+          persistentMeterPath = res.localPath
+        }
+
+        if (draftEntry.vehiclePhotoUri && !draftEntry.vehiclePhotoUri.startsWith('data:')) {
+          const res = await photoStorageService.savePhotoPermanently(
+            draftEntry.vehiclePhotoUri,
+            'VEHICLE'
+          )
+          persistentVehiclePath = res.localPath
+        }
+
+        // 2. Prepare atomic transaction records
+        const photosPayload = [
+          ...(persistentMeterPath
+            ? [{ photoType: 'METER' as const, localPath: persistentMeterPath, fileName: 'meter.jpg', capturedAt }]
+            : []),
+          ...(persistentVehiclePath
+            ? [{ photoType: 'VEHICLE' as const, localPath: persistentVehiclePath, fileName: 'vehicle.jpg', capturedAt }]
+            : []),
+        ]
+
+        const ocrPayload = [
+          {
+            fieldName: 'quantity',
+            extractedValue: quantity,
+            confidence: draftEntry.meterOCR?.confidence.quantity ?? 100,
+            source: draftEntry.manualEdits.quantity !== undefined ? 'MANUAL_EDIT' : 'OCR',
+          },
+          {
+            fieldName: 'amount',
+            extractedValue: amount,
+            confidence: draftEntry.meterOCR?.confidence.amount ?? 100,
+            source: draftEntry.manualEdits.amount !== undefined ? 'MANUAL_EDIT' : 'OCR',
+          },
+          {
+            fieldName: 'odometer',
+            extractedValue: odometer,
+            confidence: draftEntry.vehicleOCR?.confidence ?? 100,
+            source: draftEntry.manualEdits.odometer !== undefined ? 'MANUAL_EDIT' : 'OCR',
+          },
+        ]
+
+        try {
+          // 3. Atomically persist to SQLite
+          const savedEntry = await fuelRepository.createWithTransaction(
+            {
+              id: entryId,
+              vehicleId: activeVehicle.id,
+              vehicleNumber: activeVehicle.vehicleNumber,
+              capturedAt,
+              fuelStationName: stationName,
+              locationAddress: location,
+              latitude,
+              longitude,
+              fuelType: activeVehicle.fuelType,
+              quantity,
+              amount,
+              rate: metrics.rate,
+              odometer,
+              previousOdometer,
+              distance: metrics.distance,
+              mileage: metrics.mileage,
+              verificationStatus: 'USER_CONFIRMED',
+            },
+            photosPayload,
+            ocrPayload
+          )
+
+          // 4. Update in-memory reactive state
+          const updatedVehicles = state.vehicles.map((v) =>
+            v.id === activeVehicle.id
+              ? { ...v, currentOdometer: Math.max(v.currentOdometer, odometer) }
+              : v
+          )
+
+          set({
+            fuelEntries: [savedEntry, ...fuelEntries],
+            vehicles: updatedVehicles,
+            draftEntry: initialDraft,
+          })
+
+          return savedEntry
+        } catch (dbError) {
+          console.error('[FuelStore] Failed to save entry to SQLite database:', dbError)
+          throw dbError
+        }
       },
 
       resetDraft: () => set({ draftEntry: initialDraft }),
@@ -211,34 +308,55 @@ export const useFuelStore = create<FuelState>()(
         return get().fuelEntries.find((e) => e.id === id)
       },
 
-      updateActiveVehicle: (updated: Partial<Vehicle>) =>
-        set((state) => ({
-          vehicles: state.vehicles.map((v) =>
-            v.id === state.activeVehicleId ? { ...v, ...updated } : v
-          ),
-        })),
+      updateActiveVehicle: async (updated: Partial<Vehicle>) => {
+        const state = get()
+        try {
+          const res = await vehicleRepository.update(state.activeVehicleId, updated)
+          if (res) {
+            set((s) => ({
+              vehicles: s.vehicles.map((v) => (v.id === state.activeVehicleId ? res : v)),
+            }))
+          }
+        } catch {
+          // In-memory fallback
+          set((s) => ({
+            vehicles: s.vehicles.map((v) =>
+              v.id === state.activeVehicleId ? { ...v, ...updated } : v
+            ),
+          }))
+        }
+      },
 
       toggleDemoMode: () =>
         set((state) => ({ demoMode: !state.demoMode })),
 
-      resetToMockData: () =>
+      resetToMockData: async () => {
         set({
           vehicles: initialVehicles as Vehicle[],
           fuelEntries: initialFuelData as FuelEntry[],
           draftEntry: initialDraft,
-        }),
+        })
+      },
 
-      deleteFuelEntry: (id: string) =>
+      deleteFuelEntry: async (id: string) => {
+        try {
+          await fuelRepository.delete(id)
+        } catch (err) {
+          console.warn('[FuelStore] Database delete failed, updating local state:', err)
+        }
+
         set((state) => ({
           fuelEntries: state.fuelEntries.filter((e) => e.id !== id),
-        })),
+        }))
+        return true
+      },
     }),
     {
-      name: 'fueltrack-storage-v1',
+      // Only persist lightweight user preferences in localStorage
+      // Fuel records and vehicles are stored exclusively in SQLite
+      name: 'fueltrack-preferences-v2',
       partialize: (state) => ({
-        vehicles: state.vehicles,
         activeVehicleId: state.activeVehicleId,
-        fuelEntries: state.fuelEntries,
         demoMode: state.demoMode,
       }),
     }

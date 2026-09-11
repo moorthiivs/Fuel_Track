@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 export interface ModalProps {
@@ -14,17 +14,62 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
 }) => {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
+  const titleId = title ? 'modal-dialog-title' : undefined
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
     if (isOpen) {
+      previousActiveElement.current = document.activeElement as HTMLElement
       document.body.style.overflow = 'hidden'
+
+      // Focus first focusable element inside modal
+      const timer = setTimeout(() => {
+        if (modalRef.current) {
+          const focusables = modalRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+          if (focusables.length > 0) {
+            focusables[0].focus()
+          }
+        }
+      }, 50)
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          onClose()
+          return
+        }
+
+        // Focus trap
+        if (e.key === 'Tab' && modalRef.current) {
+          const focusables = modalRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+          if (focusables.length === 0) return
+
+          const first = focusables[0]
+          const last = focusables[focusables.length - 1]
+
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+
       window.addEventListener('keydown', handleKeyDown)
-    }
-    return () => {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', handleKeyDown)
+
+      return () => {
+        clearTimeout(timer)
+        document.body.style.overflow = ''
+        window.removeEventListener('keydown', handleKeyDown)
+        previousActiveElement.current?.focus()
+      }
     }
   }, [isOpen, onClose])
 
@@ -36,15 +81,20 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
+        ref={modalRef}
         className="relative w-full max-w-md bg-slate-900 border border-slate-800/90 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/80 flex flex-col my-auto max-h-[88dvh] sm:max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-3.5 bg-slate-900/98 backdrop-blur-md border-b border-slate-800/90 shrink-0">
           {title ? (
-            <h3 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight flex items-center gap-2">
+            <h3
+              id={titleId}
+              className="text-base sm:text-lg font-bold text-slate-100 tracking-tight flex items-center gap-2"
+            >
               {title}
             </h3>
           ) : (
@@ -53,8 +103,8 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Close"
+            className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>

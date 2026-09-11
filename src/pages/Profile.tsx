@@ -5,6 +5,7 @@ import { DecryptedText } from '../components/reactbits/DecryptedText'
 import { ClickSpark } from '../components/reactbits/ClickSpark'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 
 import { useFuelStore } from '../store/fuelStore'
 import { formatDistance } from '../utils/formatters'
@@ -33,30 +34,31 @@ export const Profile: React.FC = () => {
   const [fuelType, setFuelType] = useState<FuelType>(activeVehicle.fuelType)
   const [odometer, setOdometer] = useState(activeVehicle.currentOdometer)
   const [savedSuccess, setSavedSuccess] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false)
   const [, setForceUpdate] = useState(0)
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    updateActiveVehicle({
-      vehicleNumber,
-      makeModel,
-      fuelType,
-      currentOdometer: Number(odometer) || activeVehicle.currentOdometer,
-    })
-    setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 2500)
+    setIsSaving(true)
+    try {
+      await updateActiveVehicle({
+        vehicleNumber,
+        makeModel,
+        fuelType,
+        currentOdometer: Number(odometer) || activeVehicle.currentOdometer,
+      })
+      setSavedSuccess(true)
+      setTimeout(() => setSavedSuccess(false), 2500)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleResetData = () => {
-    if (
-      window.confirm(
-        'Reset all fuel entries and vehicles back to original factory demo data?'
-      )
-    ) {
-      resetToMockData()
-      alert('Mock data successfully reset!')
-    }
+  const handleResetConfirm = async () => {
+    await resetToMockData()
+    setIsResetConfirmOpen(false)
   }
 
   return (
@@ -122,23 +124,26 @@ export const Profile: React.FC = () => {
           <Card className="p-5 border-slate-800">
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label htmlFor="profile-reg-number" className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Registration / Number Plate
                 </label>
                 <input
+                  id="profile-reg-number"
                   type="text"
                   value={vehicleNumber}
                   onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-100 font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-emerald-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label htmlFor="profile-make-model" className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Vehicle Make & Model
                 </label>
                 <input
+                  id="profile-make-model"
                   type="text"
                   value={makeModel}
                   onChange={(e) => setMakeModel(e.target.value)}
@@ -148,16 +153,18 @@ export const Profile: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <span className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Default Fuel Type
-                </label>
-                <div className="grid grid-cols-3 gap-2">
+                </span>
+                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Default Fuel Type">
                   {(['Petrol', 'Diesel', 'CNG'] as FuelType[]).map((type) => (
                     <button
                       key={type}
                       type="button"
+                      role="radio"
+                      aria-checked={fuelType === type}
                       onClick={() => setFuelType(type)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      className={`min-h-[44px] py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         fuelType === type
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
@@ -170,11 +177,13 @@ export const Profile: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label htmlFor="profile-odometer" className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Base Odometer (km)
                 </label>
                 <input
+                  id="profile-odometer"
                   type="number"
+                  inputMode="numeric"
                   value={odometer}
                   onChange={(e) => setOdometer(Number(e.target.value))}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"
@@ -187,6 +196,8 @@ export const Profile: React.FC = () => {
                   type="submit"
                   variant="primary"
                   fullWidth
+                  disabled={isSaving}
+                  isLoading={isSaving}
                   leftIcon={
                     savedSuccess ? (
                       <Check className="w-4 h-4 stroke-[3]" />
@@ -269,6 +280,9 @@ export const Profile: React.FC = () => {
 
               <button
                 type="button"
+                role="switch"
+                aria-checked={demoMode}
+                aria-label="Toggle demo mode"
                 onClick={toggleDemoMode}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   demoMode ? 'bg-emerald-500' : 'bg-slate-700'
@@ -287,7 +301,7 @@ export const Profile: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 fullWidth
-                onClick={handleResetData}
+                onClick={() => setIsResetConfirmOpen(true)}
                 leftIcon={<RotateCcw className="w-3.5 h-3.5 text-amber-400" />}
                 className="text-xs border-slate-700 text-slate-300"
               >
@@ -297,6 +311,17 @@ export const Profile: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isResetConfirmOpen}
+        title="Reset Application Data"
+        message="Are you sure you want to reset all vehicles and fuel entries to factory mock records? All current entries will be removed."
+        confirmText="Reset Application Data"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleResetConfirm}
+        onCancel={() => setIsResetConfirmOpen(false)}
+      />
 
       <GeminiApiKeyModal
         isOpen={isGeminiModalOpen}

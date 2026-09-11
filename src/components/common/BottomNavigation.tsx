@@ -26,7 +26,7 @@ export const BottomNavigation: React.FC = () => {
             to="/"
             className={({ isActive }) =>
               clsx(
-                'flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
+                'flex flex-col items-center justify-center min-h-11 min-w-11 gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
                 isActive
                   ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/10'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
@@ -42,7 +42,7 @@ export const BottomNavigation: React.FC = () => {
             to="/history"
             className={({ isActive }) =>
               clsx(
-                'flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
+                'flex flex-col items-center justify-center min-h-11 min-w-11 gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
                 isActive
                   ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/10'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
@@ -59,7 +59,7 @@ export const BottomNavigation: React.FC = () => {
               type="button"
               onClick={() => navigate('/add-fuel')}
               aria-label="Add Fuel"
-              className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-400 via-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/50 border-4 border-slate-950 active:scale-95 hover:scale-105 transition-all duration-200 cursor-pointer animate-pulse-ring"
+              className="w-14 h-14 rounded-full bg-linear-to-tr from-emerald-400 via-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/50 border-4 border-slate-950 active:scale-95 hover:scale-105 transition-all duration-200 cursor-pointer animate-pulse-ring"
             >
               <Plus className="w-7 h-7 stroke-[2.5]" />
             </button>
@@ -73,7 +73,7 @@ export const BottomNavigation: React.FC = () => {
             to="/analytics"
             className={({ isActive }) =>
               clsx(
-                'flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
+                'flex flex-col items-center justify-center min-h-11 min-w-11 gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
                 isActive
                   ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/10'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
@@ -89,7 +89,7 @@ export const BottomNavigation: React.FC = () => {
             to="/profile"
             className={({ isActive }) =>
               clsx(
-                'flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
+                'flex flex-col items-center justify-center min-h-11 min-w-11 gap-1 py-1.5 px-3 rounded-xl transition-all duration-200 select-none active:scale-95',
                 isActive
                   ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/10'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'

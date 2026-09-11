@@ -56,24 +56,57 @@ export const Analytics: React.FC = () => {
   const fuelEntries = useFuelStore((s) => s.fuelEntries)
   const [timeRange, setTimeRange] = useState<'7D' | '30D' | '3M' | '6M'>('3M')
 
-  const stats = fuelService.computeDashboardStats(fuelEntries)
+  // Filter entries based on selected timeRange
+  const filteredEntries = useMemo(() => {
+    if (!fuelEntries || fuelEntries.length === 0) return []
 
-  // Format historical data for Recharts
+    // Sort entries descending to find the reference date (latest entry date or now)
+    const sorted = [...fuelEntries].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
+    const referenceDateStr = sorted[0]?.date || '2026-09-05'
+    const latestDate = new Date(referenceDateStr)
+
+    const daysMap = { '7D': 7, '30D': 30, '3M': 90, '6M': 180 }
+    const days = daysMap[timeRange] || 90
+    const cutoffDate = new Date(latestDate.getTime() - days * 24 * 60 * 60 * 1000)
+
+    const matches = sorted.filter((entry) => {
+      const entryDate = new Date(entry.date)
+      return !isNaN(entryDate.getTime()) && entryDate >= cutoffDate
+    })
+
+    return matches.length > 0 ? matches : sorted
+  }, [fuelEntries, timeRange])
+
+  const stats = useMemo(
+    () => fuelService.computeDashboardStats(filteredEntries),
+    [filteredEntries]
+  )
+
+  // Format filtered historical data for Recharts (chronological order)
   const chartData = useMemo(() => {
-    const reversed = [...fuelEntries].reverse()
-    return reversed.map((entry) => {
+    const ascending = [...filteredEntries].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+    return ascending.map((entry) => {
       const shortDate = entry.date.slice(5) // e.g. "08-18"
       return {
         date: shortDate,
         fullDate: entry.date,
         cost: entry.amount,
         litres: entry.quantity,
-        mileage: entry.mileage || 15.2,
+        mileage:
+          entry.mileage && entry.mileage > 0
+            ? entry.mileage
+            : entry.distance && entry.quantity > 0
+              ? Number((entry.distance / entry.quantity).toFixed(2))
+              : 0,
         odometer: entry.odometer,
         station: entry.stationName,
       }
     })
-  }, [fuelEntries])
+  }, [filteredEntries])
 
 
   const timeOptions: Array<{ key: '7D' | '30D' | '3M' | '6M'; label: string }> = [

@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { HeaderBar } from '../components/common/HeaderBar'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { SafeImage } from '../components/common/SafeImage'
 import { useFuelStore } from '../store/fuelStore'
 import { DEMO_METER_PHOTO, DEMO_VEHICLE_PHOTO } from '../mocks/demoImages'
 import {
@@ -28,6 +30,8 @@ export const FuelDetails: React.FC = () => {
   const navigate = useNavigate()
   const getEntryById = useFuelStore((s) => s.getEntryById)
   const deleteFuelEntry = useFuelStore((s) => s.deleteFuelEntry)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const entry = id ? getEntryById(id) : undefined
 
@@ -46,10 +50,16 @@ export const FuelDetails: React.FC = () => {
     )
   }
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this fuel record?')) {
-      deleteFuelEntry(entry.id)
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true)
+    try {
+      await deleteFuelEntry(entry.id)
+      setIsConfirmOpen(false)
       navigate('/history')
+    } catch (err) {
+      console.error('[FuelDetails] Delete failed:', err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -63,8 +73,9 @@ export const FuelDetails: React.FC = () => {
         rightAction={
           <button
             type="button"
-            onClick={handleDelete}
-            className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
+            onClick={() => setIsConfirmOpen(true)}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
+            aria-label="Delete Fuel Entry"
             title="Delete Entry"
           >
             <Trash2 className="w-4 h-4" />
@@ -234,7 +245,7 @@ export const FuelDetails: React.FC = () => {
                 <span className="text-emerald-400">98% OCR</span>
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
-                <img
+                <SafeImage
                   src={entry.meterPhotoUri || DEMO_METER_PHOTO}
                   alt="Fuel Meter Proof"
                   className="w-full h-full object-contain"
@@ -249,7 +260,7 @@ export const FuelDetails: React.FC = () => {
                 <span className="text-sky-400">99% OCR</span>
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
-                <img
+                <SafeImage
                   src={entry.vehiclePhotoUri || DEMO_VEHICLE_PHOTO}
                   alt="Vehicle Odometer Proof"
                   className="w-full h-full object-contain"
@@ -271,6 +282,18 @@ export const FuelDetails: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Delete Fuel Entry"
+        message="Are you sure you want to delete this fuel record? This will remove the transaction and proof photos from your local database."
+        confirmText="Delete Record"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
     </div>
   )
 }
